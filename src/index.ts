@@ -10,8 +10,10 @@ export { default as Comment } from './project/Comment';
 export { default as Costume } from './project/asset/Costume';
 export { default as Sound } from './project/asset/Sound';
 export { Block, Script, BlocksMap, Input, Field } from './project/block/Block';
+export type { CompoundBlock } from './project/block/Block';
 export type { VariableValue, VariableInfo } from './project/data/VariableValue';
 export { InputVal, serializeInputVal, deserializeInputVal } from './project/block/InputVal';
+export type { Val, NumVal, VarParam, ListParam, BroadcastParam, VarInputVal, ListInputVal, BroadcastInputVal } from './project/block/InputVal';
 export * from './project/blocks/Blocks';
 export {
   ScalarMonitorClass,

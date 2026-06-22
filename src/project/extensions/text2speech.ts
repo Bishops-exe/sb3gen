@@ -1,27 +1,40 @@
-import { Block } from '../block/Block';
-import { InputVal } from '../block/InputVal';
+import { Block, CompoundBlock } from '../block/Block';
+import { InputVal, Val } from '../block/InputVal';
+import { ck } from '../block/validate';
 
-export class SpeakAndWait {
-  constructor(public words: InputVal) {}
-  build(): Block { return Block.create('text2speech_speakAndWait').withInput('WORDS', this.words); }
+const c = InputVal.coerce;
+
+function sh(main: string, input: string, menuOp: string, field: string, val: string): CompoundBlock {
+  return { main: Block.create(main), slots: [{ inputName: input, block: Block.create(menuOp).withField(field, val) }] };
 }
 
-export class SetVoice {
-  constructor(public voice: InputVal) {}
-  build(): Block { return Block.create('text2speech_setVoice').withInput('VOICE', this.voice); }
+export function SpeakAndWait(words: Val): Block {
+  ck(words, 'words');
+  return Block.create('text2speech_speakAndWait').withInput('WORDS', c(words));
 }
 
-export class SetLanguage {
-  constructor(public language: InputVal) {}
-  build(): Block { return Block.create('text2speech_setLanguage').withInput('LANGUAGE', this.language); }
+export function SetVoice(voice: string): CompoundBlock;
+export function SetVoice(voice: InputVal): Block;
+export function SetVoice(voice: string | InputVal): Block | CompoundBlock {
+  ck(voice, 'voice');
+  if (typeof voice === 'string') return sh('text2speech_setVoice', 'VOICE', 'text2speech_menu_voices', 'voices', voice);
+  return Block.create('text2speech_setVoice').withInput('VOICE', voice);
 }
 
-export class VoicesMenu {
-  constructor(public voices: string) {}
-  build(): Block { return Block.create('text2speech_menu_voices').withField('voices', this.voices); }
+export function SetLanguage(language: string): CompoundBlock;
+export function SetLanguage(language: InputVal): Block;
+export function SetLanguage(language: string | InputVal): Block | CompoundBlock {
+  ck(language, 'language');
+  if (typeof language === 'string') return sh('text2speech_setLanguage', 'LANGUAGE', 'text2speech_menu_languages', 'languages', language);
+  return Block.create('text2speech_setLanguage').withInput('LANGUAGE', language);
 }
 
-export class LanguagesMenu {
-  constructor(public languages: string) {}
-  build(): Block { return Block.create('text2speech_menu_languages').withField('languages', this.languages); }
+export function VoicesMenu(voices: string): Block {
+  ck(voices, 'voices');
+  return Block.create('text2speech_menu_voices').withField('voices', voices);
+}
+
+export function LanguagesMenu(languages: string): Block {
+  ck(languages, 'languages');
+  return Block.create('text2speech_menu_languages').withField('languages', languages);
 }

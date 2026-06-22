@@ -1,45 +1,60 @@
-import { Block } from '../block/Block';
-import { InputVal } from '../block/InputVal';
+import { Block, CompoundBlock } from '../block/Block';
+import { InputVal, NumVal } from '../block/InputVal';
+import { ck } from '../block/validate';
 
-export class WhenMotionGreaterThan {
-  constructor(public reference: InputVal) {}
-  build(): Block {
-    return Block.create('videoSensing_whenMotionGreaterThan').withInput('REFERENCE', this.reference);
+const c = InputVal.coerce;
+
+function sh(main: string, input: string, menuOp: string, field: string, val: string): CompoundBlock {
+  return { main: Block.create(main), slots: [{ inputName: input, block: Block.create(menuOp).withField(field, val) }] };
+}
+
+export function WhenMotionGreaterThan(reference: NumVal): Block {
+  ck(reference, 'reference');
+  return Block.create('videoSensing_whenMotionGreaterThan').withInput('REFERENCE', c(reference));
+}
+
+export function VideoOn(attribute: string, subject: string): CompoundBlock;
+export function VideoOn(attribute: InputVal, subject: InputVal): Block;
+export function VideoOn(attribute: string | InputVal, subject: string | InputVal): Block | CompoundBlock {
+  ck(attribute, 'attribute'); ck(subject, 'subject');
+  if (typeof attribute === 'string' && typeof subject === 'string') {
+    return {
+      main: Block.create('videoSensing_videoOn'),
+      slots: [
+        { inputName: 'ATTRIBUTE', block: Block.create('videoSensing_menu_ATTRIBUTE').withField('ATTRIBUTE', attribute) },
+        { inputName: 'SUBJECT',   block: Block.create('videoSensing_menu_SUBJECT').withField('SUBJECT', subject) },
+      ],
+    };
   }
+  return Block.create('videoSensing_videoOn')
+    .withInput('ATTRIBUTE', attribute as InputVal)
+    .withInput('SUBJECT', subject as InputVal);
 }
 
-export class VideoOn {
-  constructor(public attribute: InputVal, public subject: InputVal) {}
-  build(): Block {
-    return Block.create('videoSensing_videoOn')
-      .withInput('ATTRIBUTE', this.attribute)
-      .withInput('SUBJECT', this.subject);
-  }
+export function VideoToggle(videoState: string): CompoundBlock;
+export function VideoToggle(videoState: InputVal): Block;
+export function VideoToggle(videoState: string | InputVal): Block | CompoundBlock {
+  ck(videoState, 'videoState');
+  if (typeof videoState === 'string') return sh('videoSensing_videoToggle', 'VIDEO_STATE', 'videoSensing_menu_VIDEO_STATE', 'VIDEO_STATE', videoState);
+  return Block.create('videoSensing_videoToggle').withInput('VIDEO_STATE', videoState);
 }
 
-export class VideoToggle {
-  constructor(public videoState: InputVal) {}
-  build(): Block { return Block.create('videoSensing_videoToggle').withInput('VIDEO_STATE', this.videoState); }
+export function SetVideoTransparency(transparency: NumVal): Block {
+  ck(transparency, 'transparency');
+  return Block.create('videoSensing_setVideoTransparency').withInput('TRANSPARENCY', c(transparency));
 }
 
-export class SetVideoTransparency {
-  constructor(public transparency: InputVal) {}
-  build(): Block {
-    return Block.create('videoSensing_setVideoTransparency').withInput('TRANSPARENCY', this.transparency);
-  }
+export function AttributeMenu(attribute: string): Block {
+  ck(attribute, 'attribute');
+  return Block.create('videoSensing_menu_ATTRIBUTE').withField('ATTRIBUTE', attribute);
 }
 
-export class AttributeMenu {
-  constructor(public attribute: string) {}
-  build(): Block { return Block.create('videoSensing_menu_ATTRIBUTE').withField('ATTRIBUTE', this.attribute); }
+export function SubjectMenu(subject: string): Block {
+  ck(subject, 'subject');
+  return Block.create('videoSensing_menu_SUBJECT').withField('SUBJECT', subject);
 }
 
-export class SubjectMenu {
-  constructor(public subject: string) {}
-  build(): Block { return Block.create('videoSensing_menu_SUBJECT').withField('SUBJECT', this.subject); }
-}
-
-export class VideoStateMenu {
-  constructor(public videoState: string) {}
-  build(): Block { return Block.create('videoSensing_menu_VIDEO_STATE').withField('VIDEO_STATE', this.videoState); }
+export function VideoStateMenu(videoState: string): Block {
+  ck(videoState, 'videoState');
+  return Block.create('videoSensing_menu_VIDEO_STATE').withField('VIDEO_STATE', videoState);
 }

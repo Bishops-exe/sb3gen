@@ -1,112 +1,154 @@
-import { Block } from '../block/Block';
-import { InputVal } from '../block/InputVal';
+import { Block, CompoundBlock } from '../block/Block';
+import { InputVal, NumVal } from '../block/InputVal';
+import { ck } from '../block/validate';
 
-export class MotorOnFor {
-  constructor(public motorId: InputVal, public duration: InputVal) {}
-  build(): Block {
-    return Block.create('boost_motorOnFor').withInput('MOTOR_ID', this.motorId).withInput('DURATION', this.duration);
+const c = InputVal.coerce;
+
+function sh(main: string, input: string, menuOp: string, field: string, val: string): CompoundBlock {
+  return { main: Block.create(main), slots: [{ inputName: input, block: Block.create(menuOp).withField(field, val) }] };
+}
+
+export function MotorOnFor(motorId: string, duration: NumVal): CompoundBlock;
+export function MotorOnFor(motorId: InputVal, duration: NumVal): Block;
+export function MotorOnFor(motorId: string | InputVal, duration: NumVal): Block | CompoundBlock {
+  ck(motorId, 'motorId'); ck(duration, 'duration');
+  if (typeof motorId === 'string') {
+    const compound = sh('boost_motorOnFor', 'MOTOR_ID', 'boost_menu_MOTOR_ID', 'MOTOR_ID', motorId);
+    compound.main.withInput('DURATION', c(duration));
+    return compound;
   }
+  return Block.create('boost_motorOnFor').withInput('MOTOR_ID', motorId).withInput('DURATION', c(duration));
 }
 
-export class MotorOnForRotation {
-  constructor(public motorId: InputVal, public rotation: InputVal) {}
-  build(): Block {
-    return Block.create('boost_motorOnForRotation')
-      .withInput('MOTOR_ID', this.motorId)
-      .withInput('ROTATION', this.rotation);
+export function MotorOnForRotation(motorId: string, rotation: NumVal): CompoundBlock;
+export function MotorOnForRotation(motorId: InputVal, rotation: NumVal): Block;
+export function MotorOnForRotation(motorId: string | InputVal, rotation: NumVal): Block | CompoundBlock {
+  ck(motorId, 'motorId'); ck(rotation, 'rotation');
+  if (typeof motorId === 'string') {
+    const compound = sh('boost_motorOnForRotation', 'MOTOR_ID', 'boost_menu_MOTOR_ID', 'MOTOR_ID', motorId);
+    compound.main.withInput('ROTATION', c(rotation));
+    return compound;
   }
+  return Block.create('boost_motorOnForRotation').withInput('MOTOR_ID', motorId).withInput('ROTATION', c(rotation));
 }
 
-export class MotorOn {
-  constructor(public motorId: InputVal) {}
-  build(): Block { return Block.create('boost_motorOn').withInput('MOTOR_ID', this.motorId); }
+export function MotorOn(motorId: string): CompoundBlock;
+export function MotorOn(motorId: InputVal): Block;
+export function MotorOn(motorId: string | InputVal): Block | CompoundBlock {
+  ck(motorId, 'motorId');
+  if (typeof motorId === 'string') return sh('boost_motorOn', 'MOTOR_ID', 'boost_menu_MOTOR_ID', 'MOTOR_ID', motorId);
+  return Block.create('boost_motorOn').withInput('MOTOR_ID', motorId);
 }
 
-export class MotorOff {
-  constructor(public motorId: InputVal) {}
-  build(): Block { return Block.create('boost_motorOff').withInput('MOTOR_ID', this.motorId); }
+export function MotorOff(motorId: string): CompoundBlock;
+export function MotorOff(motorId: InputVal): Block;
+export function MotorOff(motorId: string | InputVal): Block | CompoundBlock {
+  ck(motorId, 'motorId');
+  if (typeof motorId === 'string') return sh('boost_motorOff', 'MOTOR_ID', 'boost_menu_MOTOR_ID', 'MOTOR_ID', motorId);
+  return Block.create('boost_motorOff').withInput('MOTOR_ID', motorId);
 }
 
-export class SetMotorPower {
-  constructor(public motorId: InputVal, public power: InputVal) {}
-  build(): Block {
-    return Block.create('boost_setMotorPower').withInput('MOTOR_ID', this.motorId).withInput('POWER', this.power);
+export function SetMotorPower(motorId: string, power: NumVal): CompoundBlock;
+export function SetMotorPower(motorId: InputVal, power: NumVal): Block;
+export function SetMotorPower(motorId: string | InputVal, power: NumVal): Block | CompoundBlock {
+  ck(motorId, 'motorId'); ck(power, 'power');
+  if (typeof motorId === 'string') {
+    const compound = sh('boost_setMotorPower', 'MOTOR_ID', 'boost_menu_MOTOR_ID', 'MOTOR_ID', motorId);
+    compound.main.withInput('POWER', c(power));
+    return compound;
   }
+  return Block.create('boost_setMotorPower').withInput('MOTOR_ID', motorId).withInput('POWER', c(power));
 }
 
-export class SetMotorDirection {
-  constructor(public motorId: InputVal, public motorDirection: InputVal) {}
-  build(): Block {
-    return Block.create('boost_setMotorDirection')
-      .withInput('MOTOR_ID', this.motorId)
-      .withInput('MOTOR_DIRECTION', this.motorDirection);
+export function SetMotorDirection(motorId: string, motorDirection: string): CompoundBlock;
+export function SetMotorDirection(motorId: InputVal, motorDirection: InputVal): Block;
+export function SetMotorDirection(motorId: string | InputVal, motorDirection: string | InputVal): Block | CompoundBlock {
+  ck(motorId, 'motorId'); ck(motorDirection, 'motorDirection');
+  if (typeof motorId === 'string' && typeof motorDirection === 'string') {
+    return {
+      main: Block.create('boost_setMotorDirection'),
+      slots: [
+        { inputName: 'MOTOR_ID',        block: Block.create('boost_menu_MOTOR_ID').withField('MOTOR_ID', motorId) },
+        { inputName: 'MOTOR_DIRECTION', block: Block.create('boost_menu_MOTOR_DIRECTION').withField('MOTOR_DIRECTION', motorDirection) },
+      ],
+    };
   }
+  return Block.create('boost_setMotorDirection')
+    .withInput('MOTOR_ID', motorId as InputVal)
+    .withInput('MOTOR_DIRECTION', motorDirection as InputVal);
 }
 
-export class GetMotorPosition {
-  constructor(public motorReporterId: InputVal) {}
-  build(): Block {
-    return Block.create('boost_getMotorPosition').withInput('MOTOR_REPORTER_ID', this.motorReporterId);
-  }
+export function GetMotorPosition(motorReporterId: string): CompoundBlock;
+export function GetMotorPosition(motorReporterId: InputVal): Block;
+export function GetMotorPosition(motorReporterId: string | InputVal): Block | CompoundBlock {
+  ck(motorReporterId, 'motorReporterId');
+  if (typeof motorReporterId === 'string') return sh('boost_getMotorPosition', 'MOTOR_REPORTER_ID', 'boost_menu_MOTOR_REPORTER_ID', 'MOTOR_REPORTER_ID', motorReporterId);
+  return Block.create('boost_getMotorPosition').withInput('MOTOR_REPORTER_ID', motorReporterId);
 }
 
-export class WhenColor {
-  constructor(public color: InputVal) {}
-  build(): Block { return Block.create('boost_whenColor').withInput('COLOR', this.color); }
+export function WhenColor(color: string): CompoundBlock;
+export function WhenColor(color: InputVal): Block;
+export function WhenColor(color: string | InputVal): Block | CompoundBlock {
+  ck(color, 'color');
+  if (typeof color === 'string') return sh('boost_whenColor', 'COLOR', 'boost_menu_COLOR', 'COLOR', color);
+  return Block.create('boost_whenColor').withInput('COLOR', color);
 }
 
-export class SeeingColor {
-  constructor(public color: InputVal) {}
-  build(): Block { return Block.create('boost_seeingColor').withInput('COLOR', this.color); }
+export function SeeingColor(color: string): CompoundBlock;
+export function SeeingColor(color: InputVal): Block;
+export function SeeingColor(color: string | InputVal): Block | CompoundBlock {
+  ck(color, 'color');
+  if (typeof color === 'string') return sh('boost_seeingColor', 'COLOR', 'boost_menu_COLOR', 'COLOR', color);
+  return Block.create('boost_seeingColor').withInput('COLOR', color);
 }
 
-export class WhenTilted {
-  constructor(public tiltDirectionAny: InputVal) {}
-  build(): Block {
-    return Block.create('boost_whenTilted').withInput('TILT_DIRECTION_ANY', this.tiltDirectionAny);
-  }
+export function WhenTilted(tiltDirectionAny: string): CompoundBlock;
+export function WhenTilted(tiltDirectionAny: InputVal): Block;
+export function WhenTilted(tiltDirectionAny: string | InputVal): Block | CompoundBlock {
+  ck(tiltDirectionAny, 'tiltDirectionAny');
+  if (typeof tiltDirectionAny === 'string') return sh('boost_whenTilted', 'TILT_DIRECTION_ANY', 'boost_menu_TILT_DIRECTION_ANY', 'TILT_DIRECTION_ANY', tiltDirectionAny);
+  return Block.create('boost_whenTilted').withInput('TILT_DIRECTION_ANY', tiltDirectionAny);
 }
 
-export class GetTiltAngle {
-  constructor(public tiltDirection: InputVal) {}
-  build(): Block { return Block.create('boost_getTiltAngle').withInput('TILT_DIRECTION', this.tiltDirection); }
+export function GetTiltAngle(tiltDirection: string): CompoundBlock;
+export function GetTiltAngle(tiltDirection: InputVal): Block;
+export function GetTiltAngle(tiltDirection: string | InputVal): Block | CompoundBlock {
+  ck(tiltDirection, 'tiltDirection');
+  if (typeof tiltDirection === 'string') return sh('boost_getTiltAngle', 'TILT_DIRECTION', 'boost_menu_TILT_DIRECTION', 'TILT_DIRECTION', tiltDirection);
+  return Block.create('boost_getTiltAngle').withInput('TILT_DIRECTION', tiltDirection);
 }
 
-export class SetLightHue {
-  constructor(public hue: InputVal) {}
-  build(): Block { return Block.create('boost_setLightHue').withInput('HUE', this.hue); }
+export function SetLightHue(hue: NumVal): Block {
+  ck(hue, 'hue');
+  return Block.create('boost_setLightHue').withInput('HUE', c(hue));
 }
 
-export class MotorIdMenu {
-  constructor(public motorId: string) {}
-  build(): Block { return Block.create('boost_menu_MOTOR_ID').withField('MOTOR_ID', this.motorId); }
+export function MotorIdMenu(motorId: string): Block {
+  ck(motorId, 'motorId');
+  return Block.create('boost_menu_MOTOR_ID').withField('MOTOR_ID', motorId);
 }
 
-export class MotorDirectionMenu {
-  constructor(public motorDirection: string) {}
-  build(): Block { return Block.create('boost_menu_MOTOR_DIRECTION').withField('MOTOR_DIRECTION', this.motorDirection); }
+export function MotorDirectionMenu(motorDirection: string): Block {
+  ck(motorDirection, 'motorDirection');
+  return Block.create('boost_menu_MOTOR_DIRECTION').withField('MOTOR_DIRECTION', motorDirection);
 }
 
-export class MotorReporterIdMenu {
-  constructor(public motorReporterId: string) {}
-  build(): Block {
-    return Block.create('boost_menu_MOTOR_REPORTER_ID').withField('MOTOR_REPORTER_ID', this.motorReporterId);
-  }
+export function MotorReporterIdMenu(motorReporterId: string): Block {
+  ck(motorReporterId, 'motorReporterId');
+  return Block.create('boost_menu_MOTOR_REPORTER_ID').withField('MOTOR_REPORTER_ID', motorReporterId);
 }
 
-export class ColorMenu {
-  constructor(public color: string) {}
-  build(): Block { return Block.create('boost_menu_COLOR').withField('COLOR', this.color); }
+export function ColorMenu(color: string): Block {
+  ck(color, 'color');
+  return Block.create('boost_menu_COLOR').withField('COLOR', color);
 }
 
-export class TiltDirectionAnyMenu {
-  constructor(public tiltDirectionAny: string) {}
-  build(): Block {
-    return Block.create('boost_menu_TILT_DIRECTION_ANY').withField('TILT_DIRECTION_ANY', this.tiltDirectionAny);
-  }
+export function TiltDirectionAnyMenu(tiltDirectionAny: string): Block {
+  ck(tiltDirectionAny, 'tiltDirectionAny');
+  return Block.create('boost_menu_TILT_DIRECTION_ANY').withField('TILT_DIRECTION_ANY', tiltDirectionAny);
 }
 
-export class TiltDirectionMenu {
-  constructor(public tiltDirection: string) {}
-  build(): Block { return Block.create('boost_menu_TILT_DIRECTION').withField('TILT_DIRECTION', this.tiltDirection); }
+export function TiltDirectionMenu(tiltDirection: string): Block {
+  ck(tiltDirection, 'tiltDirection');
+  return Block.create('boost_menu_TILT_DIRECTION').withField('TILT_DIRECTION', tiltDirection);
 }

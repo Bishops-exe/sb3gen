@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import {Expose, Transform, instanceToPlain, plainToInstance} from 'class-transformer';
 import {IsBoolean, IsNumber, IsOptional, IsString} from 'class-validator';
-import {InputVal, serializeInputVal, deserializeInputVal} from './InputVal';
+import {InputVal, Val, VarInputVal, ListInputVal, varName, listName, serializeInputVal, deserializeInputVal} from './InputVal';
 import Comment from '../Comment';
 import {getUniqueId} from '../../Utils';
 
 export interface Input {
   mode: number;
   primary: InputVal;
-  obscured?: string;
+  obscured?: string | InputVal;
 }
 
 export interface Field {
@@ -36,7 +36,9 @@ function serializeInputs(inputs: Record<string, Input>): Record<string, unknown>
   const out: Record<string, unknown> = {};
   for (const [k, inp] of Object.entries(inputs)) {
     const arr: unknown[] = [inp.mode, serializeInputVal(inp.primary)];
-    if (inp.obscured !== undefined) arr.push(inp.obscured);
+    if (inp.obscured !== undefined) {
+      arr.push(typeof inp.obscured === 'string' ? inp.obscured : serializeInputVal(inp.obscured));
+    }
     out[k] = arr;
   }
   return out;
@@ -45,8 +47,12 @@ function serializeInputs(inputs: Record<string, Input>): Record<string, unknown>
 function deserializeInputs(raw: Record<string, unknown>): Record<string, Input> {
   const out: Record<string, Input> = {};
   for (const [k, v] of Object.entries(raw)) {
-    const arr = v as [number, unknown, string?];
-    out[k] = {mode: arr[0], primary: deserializeInputVal(arr[1]), obscured: arr[2]};
+    const arr = v as [number, unknown, unknown?];
+    const raw3 = arr[2];
+    const obscured = raw3 === undefined ? undefined
+      : typeof raw3 === 'string' ? raw3
+      : deserializeInputVal(raw3);
+    out[k] = {mode: arr[0], primary: deserializeInputVal(arr[1]), obscured};
   }
   return out;
 }
@@ -66,6 +72,11 @@ function deserializeFields(raw: Record<string, unknown>): Record<string, Field> 
     out[k] = {value: arr[0], id: arr[1]};
   }
   return out;
+}
+
+export interface CompoundBlock {
+  main: Block;
+  slots: Array<{inputName: string; block: Block}>;
 }
 
 export class Block {
@@ -102,11 +113,13 @@ export class Block {
   topLevel: boolean = false;
 
   @Expose()
+  @Transform(({ value, obj }) => (obj as Block).topLevel ? value : undefined, { toPlainOnly: true })
   @IsOptional()
   @IsNumber()
   x?: number;
 
   @Expose()
+  @Transform(({ value, obj }) => (obj as Block).topLevel ? value : undefined, { toPlainOnly: true })
   @IsOptional()
   @IsNumber()
   y?: number;
@@ -162,6 +175,7 @@ export class Block {
 
 export class Script {
   private _blocks: Map<string, Block> = new Map();
+  private _pendingEmbeds: Array<{id: string; block: Block}> = [];
   readonly comments: Map<string, Comment> = new Map();
   private tip: string | null = null;
   x = 0;
@@ -182,9 +196,28 @@ export class Script {
     return getUniqueId();
   }
 
-  push(block: Block): string {
+  push(block: Block | CompoundBlock | (() => Block)): string {
+    if (typeof block === 'function') block = block();
+
+    if (!('opcode' in block)) {
+      const { main, slots } = block as CompoundBlock;
+      const id = this.genId();
+      this.insertChained(id, main);
+      for (const { inputName, block: shadowBlock } of slots) {
+        const shadowId = this.genId();
+        shadowBlock.parent = id;
+        shadowBlock.shadow = true;
+        shadowBlock.topLevel = false;
+        main.inputs[inputName] = Input.value(InputVal.block(shadowId));
+        this._blocks.set(shadowId, shadowBlock);
+      }
+      this.drainEmbeds(id, main);
+      return id;
+    }
+
     const id = this.genId();
-    this.insertChained(id, block);
+    this.insertChained(id, block as Block);
+    this.drainEmbeds(id, block as Block);
     return id;
   }
 
@@ -196,7 +229,149 @@ export class Script {
     const c = new Comment(text);
     c.blockId = blockId;
     this.comments.set(commentId, c);
+    this.drainEmbeds(blockId, block);
     return blockId;
+  }
+
+  addOrphan(id: string, block: Block): void {
+    this._blocks.set(id, block);
+  }
+
+  embed(variable: VarInputVal): InputVal;
+  embed(list: ListInputVal): InputVal;
+  embed(block: Block | CompoundBlock): InputVal;
+  embed(item: VarInputVal | ListInputVal | Block | CompoundBlock): InputVal {
+    if ('kind' in item) {
+      const dataBlock = item.kind === 'var'
+        ? Block.create('data_variable').withField('VARIABLE', varName(item as VarInputVal), (item as VarInputVal).id)
+        : Block.create('data_listcontents').withField('LIST', listName(item as ListInputVal), (item as ListInputVal).id);
+      const id = this.genId();
+      dataBlock.topLevel = false;
+      this._pendingEmbeds.push({id, block: dataBlock});
+      return InputVal.block(id);
+    }
+    const block = item;
+    if (!('opcode' in block)) {
+      const { main, slots } = block as CompoundBlock;
+      const id = this.genId();
+      for (const { inputName, block: shadowBlock } of slots) {
+        const shadowId = this.genId();
+        shadowBlock.shadow = true;
+        shadowBlock.topLevel = false;
+        main.inputs[inputName] = Input.value(InputVal.block(shadowId));
+        this._pendingEmbeds.push({id: shadowId, block: shadowBlock});
+      }
+      this._pendingEmbeds.push({id, block: main});
+      return InputVal.block(id);
+    }
+    const id = this.genId();
+    this._pendingEmbeds.push({id, block: block as Block});
+    return InputVal.block(id);
+  }
+
+  private drainEmbeds(parentId: string, parentBlock: Block): void {
+    if (this._pendingEmbeds.length === 0) return;
+    const embedMap = new Map(this._pendingEmbeds.map(({id, block}) => [id, block]));
+    this._pendingEmbeds = [];
+    this.fixEmbedParents(embedMap, parentId, parentBlock);
+    this.upgradeEmbedModes(embedMap, parentBlock);
+    for (const [id, block] of embedMap) {
+      block.topLevel = false;
+      this._blocks.set(id, block);
+    }
+  }
+
+  private upgradeEmbedModes(embedMap: Map<string, Block>, block: Block): void {
+    for (const input of Object.values(block.inputs)) {
+      if (input.primary.kind !== 'block') continue;
+      const embedded = embedMap.get(input.primary.id);
+      if (!embedded) continue;
+      // Only upgrade reporter/variable blocks — not shadow menu blocks
+      if (!embedded.shadow && input.mode === 1) {
+        input.mode = 3;
+        input.obscured = InputVal.str('');
+      }
+      this.upgradeEmbedModes(embedMap, embedded);
+    }
+  }
+
+  private fixEmbedParents(embedMap: Map<string, Block>, parentId: string, parentBlock: Block): void {
+    for (const input of Object.values(parentBlock.inputs)) {
+      if (input.primary.kind === 'block') {
+        const childId = input.primary.id;
+        const childBlock = embedMap.get(childId);
+        if (childBlock) {
+          childBlock.parent = parentId;
+          this.fixEmbedParents(embedMap, childId, childBlock);
+        }
+      }
+    }
+  }
+
+  private buildSubstack(body: (s: Script) => void): {firstId: string; record: Record<string, Block>} | null {
+    const inner = new Script();
+    body(inner);
+    const record = inner.toRecord();
+    const entries = Object.entries(record);
+    if (entries.length === 0) return null;
+    return {firstId: entries[0][0], record};
+  }
+
+  private attachSubstack(sub: {firstId: string; record: Record<string, Block>}, parentId: string): void {
+    sub.record[sub.firstId].parent = parentId;
+    sub.record[sub.firstId].topLevel = false;
+    for (const [id, block] of Object.entries(sub.record)) this.addOrphan(id, block);
+  }
+
+  forever(body: (s: Script) => void): string {
+    const sub = this.buildSubstack(body);
+    if (!sub) return this.push(Block.create('control_forever'));
+    const b = Block.create('control_forever').withInput('SUBSTACK', InputVal.block(sub.firstId));
+    const id = this.push(b);
+    this.attachSubstack(sub, id);
+    return id;
+  }
+
+  repeat(times: Val, body: (s: Script) => void): string {
+    const sub = this.buildSubstack(body);
+    const b = Block.create('control_repeat').withInput('TIMES', InputVal.coerce(times));
+    if (!sub) return this.push(b);
+    b.withInput('SUBSTACK', InputVal.block(sub.firstId));
+    const id = this.push(b);
+    this.attachSubstack(sub, id);
+    return id;
+  }
+
+  if(condition: InputVal, body: (s: Script) => void): string {
+    const sub = this.buildSubstack(body);
+    const b = Block.create('control_if').withInput('CONDITION', condition);
+    if (!sub) return this.push(b);
+    b.withInput('SUBSTACK', InputVal.block(sub.firstId));
+    const id = this.push(b);
+    this.attachSubstack(sub, id);
+    return id;
+  }
+
+  ifElse(condition: InputVal, thenBody: (s: Script) => void, elseBody: (s: Script) => void): string {
+    const thenSub = this.buildSubstack(thenBody);
+    const elseSub = this.buildSubstack(elseBody);
+    const b = Block.create('control_if_else').withInput('CONDITION', condition);
+    if (thenSub) b.withInput('SUBSTACK', InputVal.block(thenSub.firstId));
+    if (elseSub) b.withInput('SUBSTACK2', InputVal.block(elseSub.firstId));
+    const id = this.push(b);
+    if (thenSub) this.attachSubstack(thenSub, id);
+    if (elseSub) this.attachSubstack(elseSub, id);
+    return id;
+  }
+
+  repeatUntil(condition: InputVal, body: (s: Script) => void): string {
+    const sub = this.buildSubstack(body);
+    const b = Block.create('control_repeat_until').withInput('CONDITION', condition);
+    if (!sub) return this.push(b);
+    b.withInput('SUBSTACK', InputVal.block(sub.firstId));
+    const id = this.push(b);
+    this.attachSubstack(sub, id);
+    return id;
   }
 
   insert(id: string, block: Block): string {
@@ -256,6 +431,11 @@ export class BlocksMap {
 
   addBlock(id: string, block: Block): this {
     this._orphans.set(id, block);
+    return this;
+  }
+
+  deleteBlock(id: string): this {
+    this._orphans.delete(id);
     return this;
   }
 

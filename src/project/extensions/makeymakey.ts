@@ -1,22 +1,33 @@
-import { Block } from '../block/Block';
+import { Block, CompoundBlock } from '../block/Block';
 import { InputVal } from '../block/InputVal';
+import { ck } from '../block/validate';
 
-export class WhenMakeyKeyPressed {
-  constructor(public key: InputVal) {}
-  build(): Block { return Block.create('makeymakey_whenMakeyKeyPressed').withInput('KEY', this.key); }
+function sh(main: string, input: string, menuOp: string, field: string, val: string): CompoundBlock {
+  return { main: Block.create(main), slots: [{ inputName: input, block: Block.create(menuOp).withField(field, val) }] };
 }
 
-export class WhenCodePressed {
-  constructor(public sequence: InputVal) {}
-  build(): Block { return Block.create('makeymakey_whenCodePressed').withInput('SEQUENCE', this.sequence); }
+export function WhenMakeyKeyPressed(key: string): CompoundBlock;
+export function WhenMakeyKeyPressed(key: InputVal): Block;
+export function WhenMakeyKeyPressed(key: string | InputVal): Block | CompoundBlock {
+  ck(key, 'key');
+  if (typeof key === 'string') return sh('makeymakey_whenMakeyKeyPressed', 'KEY', 'makeymakey_menu_KEY', 'KEY', key);
+  return Block.create('makeymakey_whenMakeyKeyPressed').withInput('KEY', key);
 }
 
-export class KeyMenu {
-  constructor(public key: string) {}
-  build(): Block { return Block.create('makeymakey_menu_KEY').withField('KEY', this.key); }
+export function WhenCodePressed(sequence: string): CompoundBlock;
+export function WhenCodePressed(sequence: InputVal): Block;
+export function WhenCodePressed(sequence: string | InputVal): Block | CompoundBlock {
+  ck(sequence, 'sequence');
+  if (typeof sequence === 'string') return sh('makeymakey_whenCodePressed', 'SEQUENCE', 'makeymakey_menu_SEQUENCE', 'SEQUENCE', sequence);
+  return Block.create('makeymakey_whenCodePressed').withInput('SEQUENCE', sequence);
 }
 
-export class SequenceMenu {
-  constructor(public sequence: string) {}
-  build(): Block { return Block.create('makeymakey_menu_SEQUENCE').withField('SEQUENCE', this.sequence); }
+export function KeyMenu(key: string): Block {
+  ck(key, 'key');
+  return Block.create('makeymakey_menu_KEY').withField('KEY', key);
+}
+
+export function SequenceMenu(sequence: string): Block {
+  ck(sequence, 'sequence');
+  return Block.create('makeymakey_menu_SEQUENCE').withField('SEQUENCE', sequence);
 }

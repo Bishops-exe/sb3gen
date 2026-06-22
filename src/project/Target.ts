@@ -1,12 +1,14 @@
 import 'reflect-metadata';
 import { Expose, Transform, Type, instanceToPlain, plainToInstance } from 'class-transformer';
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Block, serializeBlocksRecord, deserializeBlocksRecord } from './block/Block';
+import { Block, BlocksMap, Script, serializeBlocksRecord, deserializeBlocksRecord } from './block/Block';
+import { VarInputVal, ListInputVal, BroadcastInputVal } from './block/InputVal';
 import Costume from './asset/Costume';
 import Sound from './asset/Sound';
 import Comment from './Comment';
 import { VariableInfo, VariableValue } from './data/VariableValue';
 import {PartialFieldsOf} from "../Types";
+import {getUniqueId} from "../Utils";
 
 export enum RotationStyle {
   AllRound = 'all around',
@@ -35,9 +37,15 @@ class BaseTarget {
   broadcasts: Record<string, string> = {};
 
   @Expose()
-  @Transform(({ value }) => serializeBlocksRecord(value ?? {}), { toPlainOnly: true })
-  @Transform(({ value }) => deserializeBlocksRecord(value ?? {}), { toClassOnly: true })
-  blocks: Record<string, Block> = {};
+  @Transform(({ value }) => serializeBlocksRecord((value as BlocksMap).toRecord()), { toPlainOnly: true })
+  @Transform(({ value }) => {
+    const bm = new BlocksMap();
+    for (const [id, block] of Object.entries(deserializeBlocksRecord(value ?? {}))) {
+      bm.addBlock(id, block);
+    }
+    return bm;
+  }, { toClassOnly: true })
+  blocks: BlocksMap = new BlocksMap();
 
   @Expose()
   @Transform(({ value }) => {
@@ -75,6 +83,31 @@ class BaseTarget {
   @Expose()
   @IsNumber()
   volume: number = 100;
+
+  addScript(builder: (s: Script) => void): this {
+    const script = new Script();
+    builder(script);
+    this.blocks.addScript(script);
+    return this;
+  }
+
+  addVariable(name: string, initialValue: VariableValue = 0): VarInputVal {
+    const id = getUniqueId();
+    this.variables[id] = [name, initialValue];
+    return { kind: 'var', name, id };
+  }
+
+  addList(name: string, initialValues: VariableValue[] = []): ListInputVal {
+    const id = getUniqueId();
+    this.lists[id] = [name, initialValues];
+    return { kind: 'list', name, id };
+  }
+
+  addBroadcast(name: string): BroadcastInputVal {
+    const id = getUniqueId();
+    this.broadcasts[id] = name;
+    return { kind: 'broadcast', name, id };
+  }
 }
 
 export class Stage extends BaseTarget {

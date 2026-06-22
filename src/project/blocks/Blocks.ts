@@ -1,756 +1,657 @@
-import { Block } from '../block/Block';
-import { InputVal } from '../block/InputVal';
+import { Block, CompoundBlock } from '../block/Block';
+import { InputVal, Val, NumVal, VarParam, ListParam, BroadcastParam, varName, listName, broadcastName } from '../block/InputVal';
+import { ck, ckColor } from '../block/validate';
+
+const c = InputVal.coerce;
+
+function shadow(mainOpcode: string, shadowOpcode: string, fieldName: string, fieldValue: string, inputName: string): CompoundBlock {
+  return {
+    main: Block.create(mainOpcode),
+    slots: [{ inputName, block: Block.create(shadowOpcode).withField(fieldName, fieldValue) }],
+  };
+}
 
 // ── Events ────────────────────────────────────────────────────────────────────
 
-export class WhenFlagClicked {
-  build(): Block { return Block.create('event_whenflagclicked'); }
+export function WhenFlagClicked(): Block { return Block.create('event_whenflagclicked'); }
+
+export function WhenThisSpriteClicked(): Block { return Block.create('event_whenthisspriteclicked'); }
+
+export function WhenKeyPressed(key: string): Block {
+  ck(key, 'key');
+  return Block.create('event_whenkeypressed').withField('KEY_OPTION', key);
 }
 
-export class WhenThisSpriteClicked {
-  build(): Block { return Block.create('event_whenthisspriteclicked'); }
+export function WhenIReceive(broadcastOption: BroadcastParam): Block {
+  ck(broadcastOption, 'broadcastOption');
+  const name = broadcastName(broadcastOption);
+  const id = typeof broadcastOption === 'string' ? null : broadcastOption.id;
+  return Block.create('event_whenbroadcastreceived').withField('BROADCAST_OPTION', name, id);
 }
 
-export class WhenKeyPressed {
-  constructor(public key: string) {}
-  build(): Block { return Block.create('event_whenkeypressed').withField('KEY_OPTION', this.key); }
+export function Broadcast(broadcastInput: InputVal): Block {
+  ck(broadcastInput, 'broadcastInput');
+  return Block.create('event_broadcast').withInput('BROADCAST_INPUT', broadcastInput);
 }
 
-export class WhenIReceive {
-  constructor(public broadcastOption: string) {}
-  build(): Block { return Block.create('event_whenbroadcastreceived').withField('BROADCAST_OPTION', this.broadcastOption); }
+export function BroadcastAndWait(broadcastInput: InputVal): Block {
+  ck(broadcastInput, 'broadcastInput');
+  return Block.create('event_broadcastandwait').withInput('BROADCAST_INPUT', broadcastInput);
 }
 
-export class Broadcast {
-  constructor(public broadcastInput: InputVal) {}
-  build(): Block { return Block.create('event_broadcast').withInput('BROADCAST_INPUT', this.broadcastInput); }
+export function WhenBackdropSwitchesTo(backdrop: string): Block {
+  ck(backdrop, 'backdrop');
+  return Block.create('event_whenbackdropswitchesto').withField('BACKDROP', backdrop);
 }
 
-export class BroadcastAndWait {
-  constructor(public broadcastInput: InputVal) {}
-  build(): Block { return Block.create('event_broadcastandwait').withInput('BROADCAST_INPUT', this.broadcastInput); }
-}
-
-export class WhenBackdropSwitchesTo {
-  constructor(public backdrop: string) {}
-  build(): Block { return Block.create('event_whenbackdropswitchesto').withField('BACKDROP', this.backdrop); }
-}
-
-export class WhenGreaterThan {
-  constructor(public value: InputVal, public whenGreaterThanMenu: string) {}
-  build(): Block {
-    return Block.create('event_whengreaterthan')
-      .withInput('VALUE', this.value)
-      .withField('WHENGREATERTHANMENU', this.whenGreaterThanMenu);
-  }
+export function WhenGreaterThan(value: NumVal, whenGreaterThanMenu: string): Block {
+  ck(value, 'value');
+  ck(whenGreaterThanMenu, 'whenGreaterThanMenu');
+  return Block.create('event_whengreaterthan')
+    .withInput('VALUE', c(value))
+    .withField('WHENGREATERTHANMENU', whenGreaterThanMenu);
 }
 
 // ── Motion ────────────────────────────────────────────────────────────────────
 
-export class MoveSteps {
-  constructor(public steps: InputVal) {}
-  build(): Block { return Block.create('motion_movesteps').withInput('STEPS', this.steps); }
+export function MoveSteps(steps: NumVal): Block {
+  ck(steps, 'steps');
+  return Block.create('motion_movesteps').withInput('STEPS', c(steps));
 }
 
-export class TurnRight {
-  constructor(public degrees: InputVal) {}
-  build(): Block { return Block.create('motion_turnright').withInput('DEGREES', this.degrees); }
+export function TurnRight(degrees: NumVal): Block {
+  ck(degrees, 'degrees');
+  return Block.create('motion_turnright').withInput('DEGREES', c(degrees));
 }
 
-export class TurnLeft {
-  constructor(public degrees: InputVal) {}
-  build(): Block { return Block.create('motion_turnleft').withInput('DEGREES', this.degrees); }
+export function TurnLeft(degrees: NumVal): Block {
+  ck(degrees, 'degrees');
+  return Block.create('motion_turnleft').withInput('DEGREES', c(degrees));
 }
 
-export class GoToXY {
-  constructor(public x: InputVal, public y: InputVal) {}
-  build(): Block {
-    return Block.create('motion_gotoxy').withInput('X', this.x).withInput('Y', this.y);
+export function GoToXY(x: NumVal, y: NumVal): Block {
+  ck(x, 'x'); ck(y, 'y');
+  return Block.create('motion_gotoxy').withInput('X', c(x)).withInput('Y', c(y));
+}
+
+export function GlideSecsToXY(secs: NumVal, x: NumVal, y: NumVal): Block {
+  ck(secs, 'secs'); ck(x, 'x'); ck(y, 'y');
+  return Block.create('motion_glidesecstoxy')
+    .withInput('SECS', c(secs))
+    .withInput('X', c(x))
+    .withInput('Y', c(y));
+}
+
+export function PointInDirection(direction: NumVal): Block {
+  ck(direction, 'direction');
+  return Block.create('motion_pointindirection').withInput('DIRECTION', c(direction));
+}
+
+export function SetX(x: NumVal): Block {
+  ck(x, 'x');
+  return Block.create('motion_setx').withInput('X', c(x));
+}
+
+export function SetY(y: NumVal): Block {
+  ck(y, 'y');
+  return Block.create('motion_sety').withInput('Y', c(y));
+}
+
+export function ChangeXBy(dx: NumVal): Block {
+  ck(dx, 'dx');
+  return Block.create('motion_changexby').withInput('DX', c(dx));
+}
+
+export function ChangeYBy(dy: NumVal): Block {
+  ck(dy, 'dy');
+  return Block.create('motion_changeyby').withInput('DY', c(dy));
+}
+
+export function IfOnEdgeBounce(): Block { return Block.create('motion_ifonedgebounce'); }
+
+export function GoToMenu(to: string): Block {
+  ck(to, 'to');
+  return Block.create('motion_goto_menu').withField('TO', to);
+}
+
+export function GoTo(to: string): CompoundBlock;
+export function GoTo(to: InputVal): Block;
+export function GoTo(to: string | InputVal): Block | CompoundBlock {
+  ck(to, 'to');
+  if (typeof to === 'string') return shadow('motion_goto', 'motion_goto_menu', 'TO', to, 'TO');
+  return Block.create('motion_goto').withInput('TO', to);
+}
+
+export function GlideToMenu(to: string): Block {
+  ck(to, 'to');
+  return Block.create('motion_glideto_menu').withField('TO', to);
+}
+
+export function GlideTo(secs: NumVal, to: string): CompoundBlock;
+export function GlideTo(secs: NumVal, to: InputVal): Block;
+export function GlideTo(secs: NumVal, to: string | InputVal): Block | CompoundBlock {
+  ck(secs, 'secs'); ck(to, 'to');
+  if (typeof to === 'string') {
+    const compound = shadow('motion_glideto', 'motion_glideto_menu', 'TO', to, 'TO');
+    compound.main.withInput('SECS', c(secs));
+    return compound;
   }
+  return Block.create('motion_glideto').withInput('SECS', c(secs)).withInput('TO', to);
 }
 
-export class GlideSecsToXY {
-  constructor(public secs: InputVal, public x: InputVal, public y: InputVal) {}
-  build(): Block {
-    return Block.create('motion_glidesecstoxy')
-      .withInput('SECS', this.secs)
-      .withInput('X', this.x)
-      .withInput('Y', this.y);
-  }
+export function PointTowardsMenu(towards: string): Block {
+  ck(towards, 'towards');
+  return Block.create('motion_pointtowards_menu').withField('TOWARDS', towards);
 }
 
-export class PointInDirection {
-  constructor(public direction: InputVal) {}
-  build(): Block { return Block.create('motion_pointindirection').withInput('DIRECTION', this.direction); }
+export function PointTowards(towards: string): CompoundBlock;
+export function PointTowards(towards: InputVal): Block;
+export function PointTowards(towards: string | InputVal): Block | CompoundBlock {
+  ck(towards, 'towards');
+  if (typeof towards === 'string') return shadow('motion_pointtowards', 'motion_pointtowards_menu', 'TOWARDS', towards, 'TOWARDS');
+  return Block.create('motion_pointtowards').withInput('TOWARDS', towards);
 }
 
-export class SetX {
-  constructor(public x: InputVal) {}
-  build(): Block { return Block.create('motion_setx').withInput('X', this.x); }
+export function SetRotationStyle(style: string): Block {
+  ck(style, 'style');
+  return Block.create('motion_setrotationstyle').withField('STYLE', style);
 }
 
-export class SetY {
-  constructor(public y: InputVal) {}
-  build(): Block { return Block.create('motion_sety').withInput('Y', this.y); }
-}
+export function MotionXPosition(): Block { return Block.create('motion_xposition'); }
 
-export class ChangeXBy {
-  constructor(public dx: InputVal) {}
-  build(): Block { return Block.create('motion_changexby').withInput('DX', this.dx); }
-}
+export function MotionYPosition(): Block { return Block.create('motion_yposition'); }
 
-export class ChangeYBy {
-  constructor(public dy: InputVal) {}
-  build(): Block { return Block.create('motion_changeyby').withInput('DY', this.dy); }
-}
-
-export class IfOnEdgeBounce {
-  build(): Block { return Block.create('motion_ifonedgebounce'); }
-}
-
-export class GoToMenu {
-  constructor(public to: string) {}
-  build(): Block { return Block.create('motion_goto_menu').withField('TO', this.to); }
-}
-
-export class GoTo {
-  constructor(public to: InputVal) {}
-  build(): Block { return Block.create('motion_goto').withInput('TO', this.to); }
-}
-
-export class GlideToMenu {
-  constructor(public to: string) {}
-  build(): Block { return Block.create('motion_glideto_menu').withField('TO', this.to); }
-}
-
-export class GlideTo {
-  constructor(public secs: InputVal, public to: InputVal) {}
-  build(): Block {
-    return Block.create('motion_glideto').withInput('SECS', this.secs).withInput('TO', this.to);
-  }
-}
-
-export class PointTowardsMenu {
-  constructor(public towards: string) {}
-  build(): Block { return Block.create('motion_pointtowards_menu').withField('TOWARDS', this.towards); }
-}
-
-export class PointTowards {
-  constructor(public towards: InputVal) {}
-  build(): Block { return Block.create('motion_pointtowards').withInput('TOWARDS', this.towards); }
-}
-
-export class SetRotationStyle {
-  constructor(public style: string) {}
-  build(): Block { return Block.create('motion_setrotationstyle').withField('STYLE', this.style); }
-}
-
-export class MotionXPosition {
-  build(): Block { return Block.create('motion_xposition'); }
-}
-
-export class MotionYPosition {
-  build(): Block { return Block.create('motion_yposition'); }
-}
-
-export class MotionDirection {
-  build(): Block { return Block.create('motion_direction'); }
-}
+export function MotionDirection(): Block { return Block.create('motion_direction'); }
 
 // ── Looks ─────────────────────────────────────────────────────────────────────
 
-export class Say {
-  constructor(public message: InputVal) {}
-  build(): Block { return Block.create('looks_say').withInput('MESSAGE', this.message); }
+export function Say(message: Val): Block {
+  ck(message, 'message');
+  return Block.create('looks_say').withInput('MESSAGE', c(message));
 }
 
-export class SayForSecs {
-  constructor(public message: InputVal, public secs: InputVal) {}
-  build(): Block {
-    return Block.create('looks_sayforsecs').withInput('MESSAGE', this.message).withInput('SECS', this.secs);
-  }
+export function SayForSecs(message: Val, secs: NumVal): Block {
+  ck(message, 'message'); ck(secs, 'secs');
+  return Block.create('looks_sayforsecs').withInput('MESSAGE', c(message)).withInput('SECS', c(secs));
 }
 
-export class Think {
-  constructor(public message: InputVal) {}
-  build(): Block { return Block.create('looks_think').withInput('MESSAGE', this.message); }
+export function Think(message: Val): Block {
+  ck(message, 'message');
+  return Block.create('looks_think').withInput('MESSAGE', c(message));
 }
 
-export class ThinkForSecs {
-  constructor(public message: InputVal, public secs: InputVal) {}
-  build(): Block {
-    return Block.create('looks_thinkforsecs').withInput('MESSAGE', this.message).withInput('SECS', this.secs);
-  }
+export function ThinkForSecs(message: Val, secs: NumVal): Block {
+  ck(message, 'message'); ck(secs, 'secs');
+  return Block.create('looks_thinkforsecs').withInput('MESSAGE', c(message)).withInput('SECS', c(secs));
 }
 
-export class Show {
-  build(): Block { return Block.create('looks_show'); }
+export function Show(): Block { return Block.create('looks_show'); }
+
+export function Hide(): Block { return Block.create('looks_hide'); }
+
+export function SetSizeTo(size: NumVal): Block {
+  ck(size, 'size');
+  return Block.create('looks_setsizeto').withInput('SIZE', c(size));
 }
 
-export class Hide {
-  build(): Block { return Block.create('looks_hide'); }
+export function ChangeSizeBy(change: NumVal): Block {
+  ck(change, 'change');
+  return Block.create('looks_changesizeby').withInput('CHANGE', c(change));
 }
 
-export class SetSizeTo {
-  constructor(public size: InputVal) {}
-  build(): Block { return Block.create('looks_setsizeto').withInput('SIZE', this.size); }
+export function SetEffect(value: NumVal, effect: string): Block {
+  ck(value, 'value'); ck(effect, 'effect');
+  return Block.create('looks_seteffectto').withInput('VALUE', c(value)).withField('EFFECT', effect);
 }
 
-export class ChangeSizeBy {
-  constructor(public change: InputVal) {}
-  build(): Block { return Block.create('looks_changesizeby').withInput('CHANGE', this.change); }
+export function ChangeEffect(change: NumVal, effect: string): Block {
+  ck(change, 'change'); ck(effect, 'effect');
+  return Block.create('looks_changeeffectby').withInput('CHANGE', c(change)).withField('EFFECT', effect);
 }
 
-export class SetEffect {
-  constructor(public value: InputVal, public effect: string) {}
-  build(): Block {
-    return Block.create('looks_seteffectto').withInput('VALUE', this.value).withField('EFFECT', this.effect);
-  }
+export function ClearEffects(): Block { return Block.create('looks_cleargraphiceffects'); }
+
+export function CostumeMenu(costume: string): Block {
+  ck(costume, 'costume');
+  return Block.create('looks_costume').withField('COSTUME', costume);
 }
 
-export class ChangeEffect {
-  constructor(public change: InputVal, public effect: string) {}
-  build(): Block {
-    return Block.create('looks_changeeffectby').withInput('CHANGE', this.change).withField('EFFECT', this.effect);
-  }
+export function SwitchCostumeTo(costume: string): CompoundBlock;
+export function SwitchCostumeTo(costume: InputVal): Block;
+export function SwitchCostumeTo(costume: string | InputVal): Block | CompoundBlock {
+  ck(costume, 'costume');
+  if (typeof costume === 'string') return shadow('looks_switchcostumeto', 'looks_costume', 'COSTUME', costume, 'COSTUME');
+  return Block.create('looks_switchcostumeto').withInput('COSTUME', costume);
 }
 
-export class ClearEffects {
-  build(): Block { return Block.create('looks_cleargraphiceffects'); }
+export function NextCostume(): Block { return Block.create('looks_nextcostume'); }
+
+export function BackdropsMenu(backdrop: string): Block {
+  ck(backdrop, 'backdrop');
+  return Block.create('looks_backdrops').withField('BACKDROP', backdrop);
 }
 
-export class CostumeMenu {
-  constructor(public costume: string) {}
-  build(): Block { return Block.create('looks_costume').withField('COSTUME', this.costume); }
+export function SwitchBackdropTo(backdrop: string): CompoundBlock;
+export function SwitchBackdropTo(backdrop: InputVal): Block;
+export function SwitchBackdropTo(backdrop: string | InputVal): Block | CompoundBlock {
+  ck(backdrop, 'backdrop');
+  if (typeof backdrop === 'string') return shadow('looks_switchbackdropto', 'looks_backdrops', 'BACKDROP', backdrop, 'BACKDROP');
+  return Block.create('looks_switchbackdropto').withInput('BACKDROP', backdrop);
 }
 
-export class SwitchCostumeTo {
-  constructor(public costume: InputVal) {}
-  build(): Block { return Block.create('looks_switchcostumeto').withInput('COSTUME', this.costume); }
+export function NextBackdrop(): Block { return Block.create('looks_nextbackdrop'); }
+
+export function GoToFrontBack(frontBack: string): Block {
+  ck(frontBack, 'frontBack');
+  return Block.create('looks_gotofrontback').withField('FRONT_BACK', frontBack);
 }
 
-export class NextCostume {
-  build(): Block { return Block.create('looks_nextcostume'); }
+export function GoForwardBackwardLayers(num: NumVal, forwardBackward: string): Block {
+  ck(num, 'num'); ck(forwardBackward, 'forwardBackward');
+  return Block.create('looks_goforwardbackwardlayers')
+    .withInput('NUM', c(num))
+    .withField('FORWARD_BACKWARD', forwardBackward);
 }
 
-export class BackdropsMenu {
-  constructor(public backdrop: string) {}
-  build(): Block { return Block.create('looks_backdrops').withField('BACKDROP', this.backdrop); }
+export function CostumeNumberName(numberName: string): Block {
+  ck(numberName, 'numberName');
+  return Block.create('looks_costumenumbername').withField('NUMBER_NAME', numberName);
 }
 
-export class SwitchBackdropTo {
-  constructor(public backdrop: InputVal) {}
-  build(): Block { return Block.create('looks_switchbackdropto').withInput('BACKDROP', this.backdrop); }
+export function BackdropNumberName(numberName: string): Block {
+  ck(numberName, 'numberName');
+  return Block.create('looks_backdropnumbername').withField('NUMBER_NAME', numberName);
 }
 
-export class NextBackdrop {
-  build(): Block { return Block.create('looks_nextbackdrop'); }
-}
-
-export class GoToFrontBack {
-  constructor(public frontBack: string) {}
-  build(): Block { return Block.create('looks_gotofrontback').withField('FRONT_BACK', this.frontBack); }
-}
-
-export class GoForwardBackwardLayers {
-  constructor(public num: InputVal, public forwardBackward: string) {}
-  build(): Block {
-    return Block.create('looks_goforwardbackwardlayers')
-      .withInput('NUM', this.num)
-      .withField('FORWARD_BACKWARD', this.forwardBackward);
-  }
-}
-
-export class CostumeNumberName {
-  constructor(public numberName: string) {}
-  build(): Block { return Block.create('looks_costumenumbername').withField('NUMBER_NAME', this.numberName); }
-}
-
-export class BackdropNumberName {
-  constructor(public numberName: string) {}
-  build(): Block { return Block.create('looks_backdropnumbername').withField('NUMBER_NAME', this.numberName); }
-}
-
-export class LooksSize {
-  build(): Block { return Block.create('looks_size'); }
-}
+export function LooksSize(): Block { return Block.create('looks_size'); }
 
 // ── Sound ─────────────────────────────────────────────────────────────────────
 
-export class PlaySoundUntilDone {
-  constructor(public soundMenu: InputVal) {}
-  build(): Block { return Block.create('sound_playuntildone').withInput('SOUND_MENU', this.soundMenu); }
+export function PlaySoundUntilDone(soundMenu: InputVal): Block {
+  ck(soundMenu, 'soundMenu');
+  return Block.create('sound_playuntildone').withInput('SOUND_MENU', soundMenu);
 }
 
-export class StartSound {
-  constructor(public soundMenu: InputVal) {}
-  build(): Block { return Block.create('sound_play').withInput('SOUND_MENU', this.soundMenu); }
+export function StartSound(soundMenu: InputVal): Block {
+  ck(soundMenu, 'soundMenu');
+  return Block.create('sound_play').withInput('SOUND_MENU', soundMenu);
 }
 
-export class StopAllSounds {
-  build(): Block { return Block.create('sound_stopallsounds'); }
+export function StopAllSounds(): Block { return Block.create('sound_stopallsounds'); }
+
+export function SetVolumeTo(volume: NumVal): Block {
+  ck(volume, 'volume');
+  return Block.create('sound_setvolumeto').withInput('VOLUME', c(volume));
 }
 
-export class SetVolumeTo {
-  constructor(public volume: InputVal) {}
-  build(): Block { return Block.create('sound_setvolumeto').withInput('VOLUME', this.volume); }
+export function ChangeVolumeBy(volume: NumVal): Block {
+  ck(volume, 'volume');
+  return Block.create('sound_changevolumeby').withInput('VOLUME', c(volume));
 }
 
-export class ChangeVolumeBy {
-  constructor(public volume: InputVal) {}
-  build(): Block { return Block.create('sound_changevolumeby').withInput('VOLUME', this.volume); }
+export function SoundMenu(soundMenu: string): Block {
+  ck(soundMenu, 'soundMenu');
+  return Block.create('sound_sounds_menu').withField('SOUND_MENU', soundMenu);
 }
 
-export class SoundMenu {
-  constructor(public soundMenu: string) {}
-  build(): Block { return Block.create('sound_sounds_menu').withField('SOUND_MENU', this.soundMenu); }
+export function ChangeSoundEffect(value: NumVal, effect: string): Block {
+  ck(value, 'value'); ck(effect, 'effect');
+  return Block.create('sound_changeeffectby').withInput('VALUE', c(value)).withField('EFFECT', effect);
 }
 
-export class ChangeSoundEffect {
-  constructor(public value: InputVal, public effect: string) {}
-  build(): Block {
-    return Block.create('sound_changeeffectby').withInput('VALUE', this.value).withField('EFFECT', this.effect);
-  }
+export function SetSoundEffect(value: NumVal, effect: string): Block {
+  ck(value, 'value'); ck(effect, 'effect');
+  return Block.create('sound_seteffectto').withInput('VALUE', c(value)).withField('EFFECT', effect);
 }
 
-export class SetSoundEffect {
-  constructor(public value: InputVal, public effect: string) {}
-  build(): Block {
-    return Block.create('sound_seteffectto').withInput('VALUE', this.value).withField('EFFECT', this.effect);
-  }
-}
+export function ClearSoundEffects(): Block { return Block.create('sound_cleareffects'); }
 
-export class ClearSoundEffects {
-  build(): Block { return Block.create('sound_cleareffects'); }
-}
-
-export class SoundVolume {
-  build(): Block { return Block.create('sound_volume'); }
-}
+export function SoundVolume(): Block { return Block.create('sound_volume'); }
 
 // ── Control ───────────────────────────────────────────────────────────────────
 
-export class Wait {
-  constructor(public duration: InputVal) {}
-  build(): Block { return Block.create('control_wait').withInput('DURATION', this.duration); }
+export function Wait(duration: NumVal): Block {
+  ck(duration, 'duration');
+  return Block.create('control_wait').withInput('DURATION', c(duration));
 }
 
-export class Repeat {
-  constructor(public times: InputVal, public substack: InputVal) {}
-  build(): Block {
-    return Block.create('control_repeat').withInput('TIMES', this.times).withInput('SUBSTACK', this.substack);
-  }
+export function Repeat(times: NumVal, substack: InputVal): Block {
+  ck(times, 'times'); ck(substack, 'substack');
+  return Block.create('control_repeat').withInput('TIMES', c(times)).withInput('SUBSTACK', substack);
 }
 
-export class Forever {
-  constructor(public substack: InputVal) {}
-  build(): Block { return Block.create('control_forever').withInput('SUBSTACK', this.substack); }
+export function Forever(substack: InputVal): Block {
+  ck(substack, 'substack');
+  return Block.create('control_forever').withInput('SUBSTACK', substack);
 }
 
-export class If {
-  constructor(public condition: InputVal, public substack: InputVal) {}
-  build(): Block {
-    return Block.create('control_if').withInput('CONDITION', this.condition).withInput('SUBSTACK', this.substack);
-  }
+export function If(condition: InputVal, substack: InputVal): Block {
+  ck(condition, 'condition'); ck(substack, 'substack');
+  return Block.create('control_if').withInput('CONDITION', condition).withInput('SUBSTACK', substack);
 }
 
-export class IfElse {
-  constructor(public condition: InputVal, public substack: InputVal, public substack2: InputVal) {}
-  build(): Block {
-    return Block.create('control_if_else')
-      .withInput('CONDITION', this.condition)
-      .withInput('SUBSTACK', this.substack)
-      .withInput('SUBSTACK2', this.substack2);
-  }
+export function IfElse(condition: InputVal, substack: InputVal, substack2: InputVal): Block {
+  ck(condition, 'condition'); ck(substack, 'substack'); ck(substack2, 'substack2');
+  return Block.create('control_if_else')
+    .withInput('CONDITION', condition)
+    .withInput('SUBSTACK', substack)
+    .withInput('SUBSTACK2', substack2);
 }
 
-export class WaitUntil {
-  constructor(public condition: InputVal) {}
-  build(): Block { return Block.create('control_wait_until').withInput('CONDITION', this.condition); }
+export function WaitUntil(condition: InputVal): Block {
+  ck(condition, 'condition');
+  return Block.create('control_wait_until').withInput('CONDITION', condition);
 }
 
-export class RepeatUntil {
-  constructor(public condition: InputVal, public substack: InputVal) {}
-  build(): Block {
-    return Block.create('control_repeat_until')
-      .withInput('CONDITION', this.condition)
-      .withInput('SUBSTACK', this.substack);
-  }
+export function RepeatUntil(condition: InputVal, substack: InputVal): Block {
+  ck(condition, 'condition'); ck(substack, 'substack');
+  return Block.create('control_repeat_until')
+    .withInput('CONDITION', condition)
+    .withInput('SUBSTACK', substack);
 }
 
-export class Stop {
-  constructor(public stopOption: string) {}
-  build(): Block { return Block.create('control_stop').withField('STOP_OPTION', this.stopOption); }
+export function Stop(stopOption: string): Block {
+  ck(stopOption, 'stopOption');
+  return Block.create('control_stop').withField('STOP_OPTION', stopOption);
 }
 
-export class WhenIStartAsAClone {
-  build(): Block { return Block.create('control_start_as_clone'); }
+export function WhenIStartAsAClone(): Block { return Block.create('control_start_as_clone'); }
+
+export function CreateCloneOfMenu(cloneOption: string): Block {
+  ck(cloneOption, 'cloneOption');
+  return Block.create('control_create_clone_of_menu').withField('CLONE_OPTION', cloneOption);
 }
 
-export class CreateCloneOfMenu {
-  constructor(public cloneOption: string) {}
-  build(): Block { return Block.create('control_create_clone_of_menu').withField('CLONE_OPTION', this.cloneOption); }
+export function CreateCloneOf(cloneOption: string): CompoundBlock;
+export function CreateCloneOf(cloneOption: InputVal): Block;
+export function CreateCloneOf(cloneOption: string | InputVal): Block | CompoundBlock {
+  ck(cloneOption, 'cloneOption');
+  if (typeof cloneOption === 'string') return shadow('control_create_clone_of', 'control_create_clone_of_menu', 'CLONE_OPTION', cloneOption, 'CLONE_OPTION');
+  return Block.create('control_create_clone_of').withInput('CLONE_OPTION', cloneOption);
 }
 
-export class CreateCloneOf {
-  constructor(public cloneOption: InputVal) {}
-  build(): Block { return Block.create('control_create_clone_of').withInput('CLONE_OPTION', this.cloneOption); }
-}
-
-export class DeleteThisClone {
-  build(): Block { return Block.create('control_delete_this_clone'); }
-}
+export function DeleteThisClone(): Block { return Block.create('control_delete_this_clone'); }
 
 // ── Operators ─────────────────────────────────────────────────────────────────
 
-export class Add {
-  constructor(public num1: InputVal, public num2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_add').withInput('NUM1', this.num1).withInput('NUM2', this.num2);
-  }
+export function Add(num1: NumVal, num2: NumVal): Block {
+  ck(num1, 'num1'); ck(num2, 'num2');
+  return Block.create('operator_add').withInput('NUM1', c(num1)).withInput('NUM2', c(num2));
 }
 
-export class Subtract {
-  constructor(public num1: InputVal, public num2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_subtract').withInput('NUM1', this.num1).withInput('NUM2', this.num2);
-  }
+export function Subtract(num1: NumVal, num2: NumVal): Block {
+  ck(num1, 'num1'); ck(num2, 'num2');
+  return Block.create('operator_subtract').withInput('NUM1', c(num1)).withInput('NUM2', c(num2));
 }
 
-export class Multiply {
-  constructor(public num1: InputVal, public num2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_multiply').withInput('NUM1', this.num1).withInput('NUM2', this.num2);
-  }
+export function Multiply(num1: NumVal, num2: NumVal): Block {
+  ck(num1, 'num1'); ck(num2, 'num2');
+  return Block.create('operator_multiply').withInput('NUM1', c(num1)).withInput('NUM2', c(num2));
 }
 
-export class Divide {
-  constructor(public num1: InputVal, public num2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_divide').withInput('NUM1', this.num1).withInput('NUM2', this.num2);
-  }
+export function Divide(num1: NumVal, num2: NumVal): Block {
+  ck(num1, 'num1'); ck(num2, 'num2');
+  return Block.create('operator_divide').withInput('NUM1', c(num1)).withInput('NUM2', c(num2));
 }
 
-export class Random {
-  constructor(public from: InputVal, public to: InputVal) {}
-  build(): Block {
-    return Block.create('operator_random').withInput('FROM', this.from).withInput('TO', this.to);
-  }
+export function Random(from: NumVal, to: NumVal): Block {
+  ck(from, 'from'); ck(to, 'to');
+  return Block.create('operator_random').withInput('FROM', c(from)).withInput('TO', c(to));
 }
 
-export class Lt {
-  constructor(public operand1: InputVal, public operand2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_lt').withInput('OPERAND1', this.operand1).withInput('OPERAND2', this.operand2);
-  }
+export function Lt(operand1: Val, operand2: Val): Block {
+  ck(operand1, 'operand1'); ck(operand2, 'operand2');
+  return Block.create('operator_lt').withInput('OPERAND1', c(operand1)).withInput('OPERAND2', c(operand2));
 }
 
-export class Gt {
-  constructor(public operand1: InputVal, public operand2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_gt').withInput('OPERAND1', this.operand1).withInput('OPERAND2', this.operand2);
-  }
+export function Gt(operand1: Val, operand2: Val): Block {
+  ck(operand1, 'operand1'); ck(operand2, 'operand2');
+  return Block.create('operator_gt').withInput('OPERAND1', c(operand1)).withInput('OPERAND2', c(operand2));
 }
 
-export class Eq {
-  constructor(public operand1: InputVal, public operand2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_equals').withInput('OPERAND1', this.operand1).withInput('OPERAND2', this.operand2);
-  }
+export function Eq(operand1: Val, operand2: Val): Block {
+  ck(operand1, 'operand1'); ck(operand2, 'operand2');
+  return Block.create('operator_equals').withInput('OPERAND1', c(operand1)).withInput('OPERAND2', c(operand2));
 }
 
-export class And {
-  constructor(public operand1: InputVal, public operand2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_and').withInput('OPERAND1', this.operand1).withInput('OPERAND2', this.operand2);
-  }
+export function And(operand1: InputVal, operand2: InputVal): Block {
+  ck(operand1, 'operand1'); ck(operand2, 'operand2');
+  return Block.create('operator_and').withInput('OPERAND1', operand1).withInput('OPERAND2', operand2);
 }
 
-export class Or {
-  constructor(public operand1: InputVal, public operand2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_or').withInput('OPERAND1', this.operand1).withInput('OPERAND2', this.operand2);
-  }
+export function Or(operand1: InputVal, operand2: InputVal): Block {
+  ck(operand1, 'operand1'); ck(operand2, 'operand2');
+  return Block.create('operator_or').withInput('OPERAND1', operand1).withInput('OPERAND2', operand2);
 }
 
-export class Not {
-  constructor(public operand: InputVal) {}
-  build(): Block { return Block.create('operator_not').withInput('OPERAND', this.operand); }
+export function Not(operand: InputVal): Block {
+  ck(operand, 'operand');
+  return Block.create('operator_not').withInput('OPERAND', operand);
 }
 
-export class Join {
-  constructor(public string1: InputVal, public string2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_join').withInput('STRING1', this.string1).withInput('STRING2', this.string2);
-  }
+export function Join(string1: Val, string2: Val): Block {
+  ck(string1, 'string1'); ck(string2, 'string2');
+  return Block.create('operator_join').withInput('STRING1', c(string1)).withInput('STRING2', c(string2));
 }
 
-export class LetterOf {
-  constructor(public letter: InputVal, public string: InputVal) {}
-  build(): Block {
-    return Block.create('operator_letter_of').withInput('LETTER', this.letter).withInput('STRING', this.string);
-  }
+export function LetterOf(letter: NumVal, string: Val): Block {
+  ck(letter, 'letter'); ck(string, 'string');
+  return Block.create('operator_letter_of').withInput('LETTER', c(letter)).withInput('STRING', c(string));
 }
 
-export class LengthOf {
-  constructor(public string: InputVal) {}
-  build(): Block { return Block.create('operator_length').withInput('STRING', this.string); }
+export function LengthOf(string: Val): Block {
+  ck(string, 'string');
+  return Block.create('operator_length').withInput('STRING', c(string));
 }
 
-export class Contains {
-  constructor(public string1: InputVal, public string2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_contains').withInput('STRING1', this.string1).withInput('STRING2', this.string2);
-  }
+export function Contains(string1: Val, string2: Val): Block {
+  ck(string1, 'string1'); ck(string2, 'string2');
+  return Block.create('operator_contains').withInput('STRING1', c(string1)).withInput('STRING2', c(string2));
 }
 
-export class Mod {
-  constructor(public num1: InputVal, public num2: InputVal) {}
-  build(): Block {
-    return Block.create('operator_mod').withInput('NUM1', this.num1).withInput('NUM2', this.num2);
-  }
+export function Mod(num1: NumVal, num2: NumVal): Block {
+  ck(num1, 'num1'); ck(num2, 'num2');
+  return Block.create('operator_mod').withInput('NUM1', c(num1)).withInput('NUM2', c(num2));
 }
 
-export class Round {
-  constructor(public num: InputVal) {}
-  build(): Block { return Block.create('operator_round').withInput('NUM', this.num); }
+export function Round(num: NumVal): Block {
+  ck(num, 'num');
+  return Block.create('operator_round').withInput('NUM', c(num));
 }
 
-export class MathOp {
-  constructor(public num: InputVal, public operator: string) {}
-  build(): Block {
-    return Block.create('operator_mathop').withInput('NUM', this.num).withField('OPERATOR', this.operator);
-  }
+export function MathOp(num: NumVal, operator: string): Block {
+  ck(num, 'num'); ck(operator, 'operator');
+  return Block.create('operator_mathop').withInput('NUM', c(num)).withField('OPERATOR', operator);
 }
 
 // ── Sensing ───────────────────────────────────────────────────────────────────
 
-export class AskAndWait {
-  constructor(public question: InputVal) {}
-  build(): Block { return Block.create('sensing_askandwait').withInput('QUESTION', this.question); }
+export function AskAndWait(question: Val): Block {
+  ck(question, 'question');
+  return Block.create('sensing_askandwait').withInput('QUESTION', c(question));
 }
 
-export class ResetTimer {
-  build(): Block { return Block.create('sensing_resettimer'); }
+export function ResetTimer(): Block { return Block.create('sensing_resettimer'); }
+
+export function TouchingObjectMenu(touchingObjectMenu: string): Block {
+  ck(touchingObjectMenu, 'touchingObjectMenu');
+  return Block.create('sensing_touchingobjectmenu').withField('TOUCHINGOBJECTMENU', touchingObjectMenu);
 }
 
-export class TouchingObjectMenu {
-  constructor(public touchingObjectMenu: string) {}
-  build(): Block {
-    return Block.create('sensing_touchingobjectmenu').withField('TOUCHINGOBJECTMENU', this.touchingObjectMenu);
-  }
+export function TouchingObject(touchingObjectMenu: InputVal): Block {
+  ck(touchingObjectMenu, 'touchingObjectMenu');
+  return Block.create('sensing_touchingobject').withInput('TOUCHINGOBJECTMENU', touchingObjectMenu);
 }
 
-export class TouchingObject {
-  constructor(public touchingObjectMenu: InputVal) {}
-  build(): Block {
-    return Block.create('sensing_touchingobject').withInput('TOUCHINGOBJECTMENU', this.touchingObjectMenu);
-  }
+export function TouchingColor(color: InputVal): Block {
+  ck(color, 'color');
+  ckColor(color, 'color');
+  return Block.create('sensing_touchingcolor').withInput('COLOR', color);
 }
 
-export class TouchingColor {
-  constructor(public color: InputVal) {}
-  build(): Block { return Block.create('sensing_touchingcolor').withInput('COLOR', this.color); }
+export function ColorIsTouchingColor(color: InputVal, color2: InputVal): Block {
+  ck(color, 'color'); ck(color2, 'color2');
+  ckColor(color, 'color'); ckColor(color2, 'color2');
+  return Block.create('sensing_coloristouchingcolor')
+    .withInput('COLOR', color)
+    .withInput('COLOR2', color2);
 }
 
-export class ColorIsTouchingColor {
-  constructor(public color: InputVal, public color2: InputVal) {}
-  build(): Block {
-    return Block.create('sensing_coloristouchingcolor')
-      .withInput('COLOR', this.color)
-      .withInput('COLOR2', this.color2);
-  }
+export function DistanceToMenu(distanceToMenu: string): Block {
+  ck(distanceToMenu, 'distanceToMenu');
+  return Block.create('sensing_distancetomenu').withField('DISTANCETOMENU', distanceToMenu);
 }
 
-export class DistanceToMenu {
-  constructor(public distanceToMenu: string) {}
-  build(): Block {
-    return Block.create('sensing_distancetomenu').withField('DISTANCETOMENU', this.distanceToMenu);
-  }
+export function DistanceTo(distanceToMenu: InputVal): Block {
+  ck(distanceToMenu, 'distanceToMenu');
+  return Block.create('sensing_distanceto').withInput('DISTANCETOMENU', distanceToMenu);
 }
 
-export class DistanceTo {
-  constructor(public distanceToMenu: InputVal) {}
-  build(): Block { return Block.create('sensing_distanceto').withInput('DISTANCETOMENU', this.distanceToMenu); }
+export function KeyOptions(keyOption: string): Block {
+  ck(keyOption, 'keyOption');
+  return Block.create('sensing_keyoptions').withField('KEY_OPTION', keyOption);
 }
 
-export class KeyOptions {
-  constructor(public keyOption: string) {}
-  build(): Block { return Block.create('sensing_keyoptions').withField('KEY_OPTION', this.keyOption); }
+export function KeyPressed(keyOption: string): CompoundBlock;
+export function KeyPressed(keyOption: InputVal): Block;
+export function KeyPressed(keyOption: string | InputVal): Block | CompoundBlock {
+  ck(keyOption, 'keyOption');
+  if (typeof keyOption === 'string') return shadow('sensing_keypressed', 'sensing_keyoptions', 'KEY_OPTION', keyOption, 'KEY_OPTION');
+  return Block.create('sensing_keypressed').withInput('KEY_OPTION', keyOption);
 }
 
-export class KeyPressed {
-  constructor(public keyOption: InputVal) {}
-  build(): Block { return Block.create('sensing_keypressed').withInput('KEY_OPTION', this.keyOption); }
+export function MouseDown(): Block { return Block.create('sensing_mousedown'); }
+
+export function MouseX(): Block { return Block.create('sensing_mousex'); }
+
+export function MouseY(): Block { return Block.create('sensing_mousey'); }
+
+export function SetDragMode(dragMode: string): Block {
+  ck(dragMode, 'dragMode');
+  return Block.create('sensing_setdragmode').withField('DRAG_MODE', dragMode);
 }
 
-export class MouseDown {
-  build(): Block { return Block.create('sensing_mousedown'); }
+export function Loudness(): Block { return Block.create('sensing_loudness'); }
+
+export function SensingTimer(): Block { return Block.create('sensing_timer'); }
+
+export function OfObjectMenu(object: string): Block {
+  ck(object, 'object');
+  return Block.create('sensing_of_object_menu').withField('OBJECT', object);
 }
 
-export class MouseX {
-  build(): Block { return Block.create('sensing_mousex'); }
+export function Of(object: InputVal, property: string): Block {
+  ck(object, 'object'); ck(property, 'property');
+  return Block.create('sensing_of').withInput('OBJECT', object).withField('PROPERTY', property);
 }
 
-export class MouseY {
-  build(): Block { return Block.create('sensing_mousey'); }
+export function SensingCurrent(currentMenu: string): Block {
+  ck(currentMenu, 'currentMenu');
+  return Block.create('sensing_current').withField('CURRENTMENU', currentMenu);
 }
 
-export class SetDragMode {
-  constructor(public dragMode: string) {}
-  build(): Block { return Block.create('sensing_setdragmode').withField('DRAG_MODE', this.dragMode); }
-}
+export function DaysSince2000(): Block { return Block.create('sensing_dayssince2000'); }
 
-export class Loudness {
-  build(): Block { return Block.create('sensing_loudness'); }
-}
+export function Online(): Block { return Block.create('sensing_online'); }
 
-export class SensingTimer {
-  build(): Block { return Block.create('sensing_timer'); }
-}
+export function SensingUsername(): Block { return Block.create('sensing_username'); }
 
-export class OfObjectMenu {
-  constructor(public object: string) {}
-  build(): Block { return Block.create('sensing_of_object_menu').withField('OBJECT', this.object); }
-}
-
-export class Of {
-  constructor(public object: InputVal, public property: string) {}
-  build(): Block {
-    return Block.create('sensing_of').withInput('OBJECT', this.object).withField('PROPERTY', this.property);
-  }
-}
-
-export class SensingCurrent {
-  constructor(public currentMenu: string) {}
-  build(): Block { return Block.create('sensing_current').withField('CURRENTMENU', this.currentMenu); }
-}
-
-export class DaysSince2000 {
-  build(): Block { return Block.create('sensing_dayssince2000'); }
-}
-
-export class Online {
-  build(): Block { return Block.create('sensing_online'); }
-}
-
-export class SensingUsername {
-  build(): Block { return Block.create('sensing_username'); }
-}
-
-export class SensingAnswer {
-  build(): Block { return Block.create('sensing_answer'); }
-}
+export function SensingAnswer(): Block { return Block.create('sensing_answer'); }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
-export class SetVariableTo {
-  constructor(public value: InputVal, public variable: string) {}
-  build(): Block {
-    return Block.create('data_setvariableto').withInput('VALUE', this.value).withField('VARIABLE', this.variable);
-  }
+function vid(v: VarParam): string | null { return typeof v === 'string' ? null : v.id; }
+function lid(l: ListParam): string | null { return typeof l === 'string' ? null : l.id; }
+
+export function SetVariableTo(value: Val, variable: VarParam): Block {
+  ck(value, 'value'); ck(variable, 'variable');
+  return Block.create('data_setvariableto').withInput('VALUE', c(value)).withField('VARIABLE', varName(variable), vid(variable));
 }
 
-export class ChangeVariableBy {
-  constructor(public value: InputVal, public variable: string) {}
-  build(): Block {
-    return Block.create('data_changevariableby').withInput('VALUE', this.value).withField('VARIABLE', this.variable);
-  }
+export function ChangeVariableBy(value: NumVal, variable: VarParam): Block {
+  ck(value, 'value'); ck(variable, 'variable');
+  return Block.create('data_changevariableby').withInput('VALUE', c(value)).withField('VARIABLE', varName(variable), vid(variable));
 }
 
-export class ShowVariable {
-  constructor(public variable: string) {}
-  build(): Block { return Block.create('data_showvariable').withField('VARIABLE', this.variable); }
+export function ShowVariable(variable: VarParam): Block {
+  ck(variable, 'variable');
+  return Block.create('data_showvariable').withField('VARIABLE', varName(variable), vid(variable));
 }
 
-export class HideVariable {
-  constructor(public variable: string) {}
-  build(): Block { return Block.create('data_hidevariable').withField('VARIABLE', this.variable); }
+export function HideVariable(variable: VarParam): Block {
+  ck(variable, 'variable');
+  return Block.create('data_hidevariable').withField('VARIABLE', varName(variable), vid(variable));
 }
 
-export class AddToList {
-  constructor(public item: InputVal, public list: string) {}
-  build(): Block {
-    return Block.create('data_addtolist').withInput('ITEM', this.item).withField('LIST', this.list);
-  }
+export function AddToList(item: Val, list: ListParam): Block {
+  ck(item, 'item'); ck(list, 'list');
+  return Block.create('data_addtolist').withInput('ITEM', c(item)).withField('LIST', listName(list), lid(list));
 }
 
-export class DeleteOfList {
-  constructor(public index: InputVal, public list: string) {}
-  build(): Block {
-    return Block.create('data_deleteoflist').withInput('INDEX', this.index).withField('LIST', this.list);
-  }
+export function DeleteOfList(index: NumVal, list: ListParam): Block {
+  ck(index, 'index'); ck(list, 'list');
+  return Block.create('data_deleteoflist').withInput('INDEX', c(index)).withField('LIST', listName(list), lid(list));
 }
 
-export class DeleteAllOfList {
-  constructor(public list: string) {}
-  build(): Block { return Block.create('data_deletealloflist').withField('LIST', this.list); }
+export function DeleteAllOfList(list: ListParam): Block {
+  ck(list, 'list');
+  return Block.create('data_deletealloflist').withField('LIST', listName(list), lid(list));
 }
 
-export class InsertAtList {
-  constructor(public item: InputVal, public index: InputVal, public list: string) {}
-  build(): Block {
-    return Block.create('data_insertatlist')
-      .withInput('ITEM', this.item)
-      .withInput('INDEX', this.index)
-      .withField('LIST', this.list);
-  }
+export function InsertAtList(item: Val, index: NumVal, list: ListParam): Block {
+  ck(item, 'item'); ck(index, 'index'); ck(list, 'list');
+  return Block.create('data_insertatlist')
+    .withInput('ITEM', c(item))
+    .withInput('INDEX', c(index))
+    .withField('LIST', listName(list), lid(list));
 }
 
-export class ReplaceItemOfList {
-  constructor(public index: InputVal, public item: InputVal, public list: string) {}
-  build(): Block {
-    return Block.create('data_replaceitemoflist')
-      .withInput('INDEX', this.index)
-      .withInput('ITEM', this.item)
-      .withField('LIST', this.list);
-  }
+export function ReplaceItemOfList(index: NumVal, item: Val, list: ListParam): Block {
+  ck(index, 'index'); ck(item, 'item'); ck(list, 'list');
+  return Block.create('data_replaceitemoflist')
+    .withInput('INDEX', c(index))
+    .withInput('ITEM', c(item))
+    .withField('LIST', listName(list), lid(list));
 }
 
-export class ItemOfList {
-  constructor(public index: InputVal, public list: string) {}
-  build(): Block {
-    return Block.create('data_itemoflist').withInput('INDEX', this.index).withField('LIST', this.list);
-  }
+export function ItemOfList(index: NumVal, list: ListParam): Block {
+  ck(index, 'index'); ck(list, 'list');
+  return Block.create('data_itemoflist').withInput('INDEX', c(index)).withField('LIST', listName(list), lid(list));
 }
 
-export class ItemNumOfList {
-  constructor(public item: InputVal, public list: string) {}
-  build(): Block {
-    return Block.create('data_itemnumoflist').withInput('ITEM', this.item).withField('LIST', this.list);
-  }
+export function ItemNumOfList(item: Val, list: ListParam): Block {
+  ck(item, 'item'); ck(list, 'list');
+  return Block.create('data_itemnumoflist').withInput('ITEM', c(item)).withField('LIST', listName(list), lid(list));
 }
 
-export class LengthOfList {
-  constructor(public list: string) {}
-  build(): Block { return Block.create('data_lengthoflist').withField('LIST', this.list); }
+export function LengthOfList(list: ListParam): Block {
+  ck(list, 'list');
+  return Block.create('data_lengthoflist').withField('LIST', listName(list), lid(list));
 }
 
-export class ListContainsItem {
-  constructor(public item: InputVal, public list: string) {}
-  build(): Block {
-    return Block.create('data_listcontainsitem').withInput('ITEM', this.item).withField('LIST', this.list);
-  }
+export function ListContainsItem(item: Val, list: ListParam): Block {
+  ck(item, 'item'); ck(list, 'list');
+  return Block.create('data_listcontainsitem').withInput('ITEM', c(item)).withField('LIST', listName(list), lid(list));
 }
 
-export class ShowList {
-  constructor(public list: string) {}
-  build(): Block { return Block.create('data_showlist').withField('LIST', this.list); }
+export function ShowList(list: ListParam): Block {
+  ck(list, 'list');
+  return Block.create('data_showlist').withField('LIST', listName(list), lid(list));
 }
 
-export class HideList {
-  constructor(public list: string) {}
-  build(): Block { return Block.create('data_hidelist').withField('LIST', this.list); }
+export function HideList(list: ListParam): Block {
+  ck(list, 'list');
+  return Block.create('data_hidelist').withField('LIST', listName(list), lid(list));
 }
 
 // ── Procedures ────────────────────────────────────────────────────────────────
 
-export class ArgumentReporterStringNumber {
-  constructor(public value: string) {}
-  build(): Block { return Block.create('argument_reporter_string_number').withField('VALUE', this.value); }
+export function ArgumentReporterStringNumber(value: string): Block {
+  ck(value, 'value');
+  return Block.create('argument_reporter_string_number').withField('VALUE', value);
 }
 
-export class ArgumentReporterBoolean {
-  constructor(public value: string) {}
-  build(): Block { return Block.create('argument_reporter_boolean').withField('VALUE', this.value); }
+export function ArgumentReporterBoolean(value: string): Block {
+  ck(value, 'value');
+  return Block.create('argument_reporter_boolean').withField('VALUE', value);
 }

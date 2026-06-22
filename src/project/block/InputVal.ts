@@ -11,6 +11,21 @@ export type InputVal =
   | { kind: 'var'; name: string; id: string }
   | { kind: 'list'; name: string; id: string };
 
+export type Val = number | string | InputVal;
+export type NumVal = number | InputVal;
+
+export type VarInputVal = Extract<InputVal, { kind: 'var' }>;
+export type ListInputVal = Extract<InputVal, { kind: 'list' }>;
+export type BroadcastInputVal = Extract<InputVal, { kind: 'broadcast' }>;
+
+export type VarParam = string | VarInputVal;
+export type ListParam = string | ListInputVal;
+export type BroadcastParam = string | BroadcastInputVal;
+
+export function varName(v: VarParam): string { return typeof v === 'string' ? v : v.name; }
+export function listName(v: ListParam): string { return typeof v === 'string' ? v : v.name; }
+export function broadcastName(v: BroadcastParam): string { return typeof v === 'string' ? v : v.name; }
+
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace InputVal {
   export const block = (id: string): InputVal => ({ kind: 'block', id });
@@ -24,6 +39,11 @@ export namespace InputVal {
   export const broadcast = (name: string, id: string): InputVal => ({ kind: 'broadcast', name, id });
   export const varRef = (name: string, id: string): InputVal => ({ kind: 'var', name, id });
   export const listRef = (name: string, id: string): InputVal => ({ kind: 'list', name, id });
+  export const coerce = (v: number | string | InputVal): InputVal => {
+    if (typeof v === 'number') return InputVal.num(v);
+    if (typeof v === 'string') return InputVal.str(v);
+    return v;
+  };
 }
 
 export function serializeInputVal(v: InputVal): unknown {

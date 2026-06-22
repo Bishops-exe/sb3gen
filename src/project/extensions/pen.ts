@@ -1,56 +1,62 @@
-import { Block } from '../block/Block';
-import { InputVal } from '../block/InputVal';
+import { Block, CompoundBlock } from '../block/Block';
+import { InputVal, NumVal } from '../block/InputVal';
+import { ck, ckColor } from '../block/validate';
 
-export class PenClear {
-  build(): Block { return Block.create('pen_clear'); }
+const c = InputVal.coerce;
+
+function sh(main: string, input: string, menuOp: string, field: string, val: string): CompoundBlock {
+  return { main: Block.create(main), slots: [{ inputName: input, block: Block.create(menuOp).withField(field, val) }] };
 }
 
-export class PenStamp {
-  build(): Block { return Block.create('pen_stamp'); }
+export function PenClear(): Block { return Block.create('pen_clear'); }
+
+export function PenStamp(): Block { return Block.create('pen_stamp'); }
+
+export function PenDown(): Block { return Block.create('pen_penDown'); }
+
+export function PenUp(): Block { return Block.create('pen_penUp'); }
+
+export function SetPenColor(color: InputVal): Block {
+  ck(color, 'color');
+  ckColor(color, 'color');
+  return Block.create('pen_setPenColorToColor').withInput('COLOR', color);
 }
 
-export class PenDown {
-  build(): Block { return Block.create('pen_penDown'); }
+export function PenColorParamMenu(colorParam: string): Block {
+  ck(colorParam, 'colorParam');
+  return Block.create('pen_menu_colorParam').withField('colorParam', colorParam);
 }
 
-export class PenUp {
-  build(): Block { return Block.create('pen_penUp'); }
-}
-
-export class SetPenColor {
-  constructor(public color: InputVal) {}
-  build(): Block { return Block.create('pen_setPenColorToColor').withInput('COLOR', this.color); }
-}
-
-export class ChangePenColorParam {
-  constructor(public colorParam: InputVal, public value: InputVal) {}
-  build(): Block {
-    return Block.create('pen_changePenColorParamBy')
-      .withInput('COLOR_PARAM', this.colorParam)
-      .withInput('VALUE', this.value);
+export function ChangePenColorParam(colorParam: string, value: NumVal): CompoundBlock;
+export function ChangePenColorParam(colorParam: InputVal, value: NumVal): Block;
+export function ChangePenColorParam(colorParam: string | InputVal, value: NumVal): Block | CompoundBlock {
+  ck(colorParam, 'colorParam'); ck(value, 'value');
+  if (typeof colorParam === 'string') {
+    const compound = sh('pen_changePenColorParamBy', 'COLOR_PARAM', 'pen_menu_colorParam', 'colorParam', colorParam);
+    compound.main.withInput('VALUE', c(value));
+    return compound;
   }
+  return Block.create('pen_changePenColorParamBy').withInput('COLOR_PARAM', colorParam).withInput('VALUE', c(value));
 }
 
-export class SetPenColorParam {
-  constructor(public colorParam: InputVal, public value: InputVal) {}
-  build(): Block {
-    return Block.create('pen_setPenColorParamTo')
-      .withInput('COLOR_PARAM', this.colorParam)
-      .withInput('VALUE', this.value);
+export function SetPenColorParam(colorParam: string, value: NumVal): CompoundBlock;
+export function SetPenColorParam(colorParam: InputVal, value: NumVal): Block;
+export function SetPenColorParam(colorParam: string | InputVal, value: NumVal): Block | CompoundBlock {
+  ck(colorParam, 'colorParam'); ck(value, 'value');
+  if (typeof colorParam === 'string') {
+    const compound = sh('pen_setPenColorParamTo', 'COLOR_PARAM', 'pen_menu_colorParam', 'colorParam', colorParam);
+    compound.main.withInput('VALUE', c(value));
+    return compound;
   }
+  return Block.create('pen_setPenColorParamTo').withInput('COLOR_PARAM', colorParam).withInput('VALUE', c(value));
 }
 
-export class PenColorParamMenu {
-  constructor(public colorParam: string) {}
-  build(): Block { return Block.create('pen_menu_colorParam').withField('colorParam', this.colorParam); }
+export function ChangePenSize(size: NumVal): Block {
+  ck(size, 'size');
+  return Block.create('pen_changePenSizeBy').withInput('SIZE', c(size));
 }
 
-export class ChangePenSize {
-  constructor(public size: InputVal) {}
-  build(): Block { return Block.create('pen_changePenSizeBy').withInput('SIZE', this.size); }
-}
-
-export class SetPenSize {
-  constructor(public size: InputVal) {}
-  build(): Block { return Block.create('pen_setPenSizeTo').withInput('SIZE', this.size); }
+export function SetPenSize(size: NumVal): Block {
+  ck(size, 'size');
+  return Block.create('pen_setPenSizeTo').withInput('SIZE', c(size));
 }

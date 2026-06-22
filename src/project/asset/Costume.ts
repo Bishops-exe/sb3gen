@@ -44,6 +44,27 @@ export default class Costume {
     this.md5ext = `${this.assetId}.${this.dataFormat}`;
   }
 
+  static blank(name: string, width = 480, height = 360): Costume {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="white"/></svg>`;
+    return new Costume(name, new TextEncoder().encode(svg));
+  }
+
+  static colored(name: string, color: string, width = 480, height = 360): Costume {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="${color}"/></svg>`;
+    return new Costume(name, new TextEncoder().encode(svg));
+  }
+
+  static circle(name: string, color: string, size = 80): Costume {
+    const r = size / 2;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><circle cx="${r}" cy="${r}" r="${r - 2}" fill="${color}"/></svg>`;
+    return new Costume(name, new TextEncoder().encode(svg));
+  }
+
+  static rect(name: string, color: string, width = 80, height = 80, rx = 0): Costume {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}"${rx ? ` rx="${rx}"` : ''} fill="${color}"/></svg>`;
+    return new Costume(name, new TextEncoder().encode(svg));
+  }
+
   private static detectFormat(data: Uint8Array): string {
     // PNG: 89 50 4E 47
     if (data.length >= 4 && data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47)

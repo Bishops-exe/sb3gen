@@ -1,74 +1,92 @@
-import { Block } from '../block/Block';
+import { Block, CompoundBlock } from '../block/Block';
 import { InputVal } from '../block/InputVal';
+import { ck } from '../block/validate';
 
-export class WhenGesture {
-  constructor(public gesture: InputVal) {}
-  build(): Block { return Block.create('gdxfor_whenGesture').withInput('GESTURE', this.gesture); }
+function sh(main: string, input: string, menuOp: string, field: string, val: string): CompoundBlock {
+  return { main: Block.create(main), slots: [{ inputName: input, block: Block.create(menuOp).withField(field, val) }] };
 }
 
-export class WhenForcePushedOrPulled {
-  constructor(public pushPull: InputVal) {}
-  build(): Block { return Block.create('gdxfor_whenForcePushedOrPulled').withInput('PUSH_PULL', this.pushPull); }
+export function WhenGesture(gesture: string): CompoundBlock;
+export function WhenGesture(gesture: InputVal): Block;
+export function WhenGesture(gesture: string | InputVal): Block | CompoundBlock {
+  ck(gesture, 'gesture');
+  if (typeof gesture === 'string') return sh('gdxfor_whenGesture', 'GESTURE', 'gdxfor_menu_gestureOptions', 'gestureOptions', gesture);
+  return Block.create('gdxfor_whenGesture').withInput('GESTURE', gesture);
 }
 
-export class GetForce {
-  build(): Block { return Block.create('gdxfor_getForce'); }
+export function WhenForcePushedOrPulled(pushPull: string): CompoundBlock;
+export function WhenForcePushedOrPulled(pushPull: InputVal): Block;
+export function WhenForcePushedOrPulled(pushPull: string | InputVal): Block | CompoundBlock {
+  ck(pushPull, 'pushPull');
+  if (typeof pushPull === 'string') return sh('gdxfor_whenForcePushedOrPulled', 'PUSH_PULL', 'gdxfor_menu_pushPullOptions', 'pushPullOptions', pushPull);
+  return Block.create('gdxfor_whenForcePushedOrPulled').withInput('PUSH_PULL', pushPull);
 }
 
-export class WhenTilted {
-  constructor(public tilt: InputVal) {}
-  build(): Block { return Block.create('gdxfor_whenTilted').withInput('TILT', this.tilt); }
+export function GetForce(): Block { return Block.create('gdxfor_getForce'); }
+
+export function WhenTilted(tilt: string): CompoundBlock;
+export function WhenTilted(tilt: InputVal): Block;
+export function WhenTilted(tilt: string | InputVal): Block | CompoundBlock {
+  ck(tilt, 'tilt');
+  if (typeof tilt === 'string') return sh('gdxfor_whenTilted', 'TILT', 'gdxfor_menu_tiltAnyOptions', 'tiltAnyOptions', tilt);
+  return Block.create('gdxfor_whenTilted').withInput('TILT', tilt);
 }
 
-export class IsTilted {
-  constructor(public tilt: InputVal) {}
-  build(): Block { return Block.create('gdxfor_isTilted').withInput('TILT', this.tilt); }
+export function IsTilted(tilt: string): CompoundBlock;
+export function IsTilted(tilt: InputVal): Block;
+export function IsTilted(tilt: string | InputVal): Block | CompoundBlock {
+  ck(tilt, 'tilt');
+  if (typeof tilt === 'string') return sh('gdxfor_isTilted', 'TILT', 'gdxfor_menu_tiltAnyOptions', 'tiltAnyOptions', tilt);
+  return Block.create('gdxfor_isTilted').withInput('TILT', tilt);
 }
 
-export class GetTilt {
-  constructor(public tilt: InputVal) {}
-  build(): Block { return Block.create('gdxfor_getTilt').withInput('TILT', this.tilt); }
+export function GetTilt(tilt: string): CompoundBlock;
+export function GetTilt(tilt: InputVal): Block;
+export function GetTilt(tilt: string | InputVal): Block | CompoundBlock {
+  ck(tilt, 'tilt');
+  if (typeof tilt === 'string') return sh('gdxfor_getTilt', 'TILT', 'gdxfor_menu_tiltOptions', 'tiltOptions', tilt);
+  return Block.create('gdxfor_getTilt').withInput('TILT', tilt);
 }
 
-export class IsFreeFalling {
-  build(): Block { return Block.create('gdxfor_isFreeFalling'); }
+export function IsFreeFalling(): Block { return Block.create('gdxfor_isFreeFalling'); }
+
+export function GetSpinSpeed(direction: string): CompoundBlock;
+export function GetSpinSpeed(direction: InputVal): Block;
+export function GetSpinSpeed(direction: string | InputVal): Block | CompoundBlock {
+  ck(direction, 'direction');
+  if (typeof direction === 'string') return sh('gdxfor_getSpinSpeed', 'DIRECTION', 'gdxfor_menu_axisOptions', 'axisOptions', direction);
+  return Block.create('gdxfor_getSpinSpeed').withInput('DIRECTION', direction);
 }
 
-export class GetSpinSpeed {
-  constructor(public direction: InputVal) {}
-  build(): Block { return Block.create('gdxfor_getSpinSpeed').withInput('DIRECTION', this.direction); }
+export function GetAcceleration(direction: string): CompoundBlock;
+export function GetAcceleration(direction: InputVal): Block;
+export function GetAcceleration(direction: string | InputVal): Block | CompoundBlock {
+  ck(direction, 'direction');
+  if (typeof direction === 'string') return sh('gdxfor_getAcceleration', 'DIRECTION', 'gdxfor_menu_axisOptions', 'axisOptions', direction);
+  return Block.create('gdxfor_getAcceleration').withInput('DIRECTION', direction);
 }
 
-export class GetAcceleration {
-  constructor(public direction: InputVal) {}
-  build(): Block { return Block.create('gdxfor_getAcceleration').withInput('DIRECTION', this.direction); }
+export function GestureOptionsMenu(gestureOptions: string): Block {
+  ck(gestureOptions, 'gestureOptions');
+  return Block.create('gdxfor_menu_gestureOptions').withField('gestureOptions', gestureOptions);
 }
 
-export class GestureOptionsMenu {
-  constructor(public gestureOptions: string) {}
-  build(): Block { return Block.create('gdxfor_menu_gestureOptions').withField('gestureOptions', this.gestureOptions); }
+export function PushPullOptionsMenu(pushPullOptions: string): Block {
+  ck(pushPullOptions, 'pushPullOptions');
+  return Block.create('gdxfor_menu_pushPullOptions').withField('pushPullOptions', pushPullOptions);
 }
 
-export class PushPullOptionsMenu {
-  constructor(public pushPullOptions: string) {}
-  build(): Block {
-    return Block.create('gdxfor_menu_pushPullOptions').withField('pushPullOptions', this.pushPullOptions);
-  }
+export function TiltAnyOptionsMenu(tiltAnyOptions: string): Block {
+  ck(tiltAnyOptions, 'tiltAnyOptions');
+  return Block.create('gdxfor_menu_tiltAnyOptions').withField('tiltAnyOptions', tiltAnyOptions);
 }
 
-export class TiltAnyOptionsMenu {
-  constructor(public tiltAnyOptions: string) {}
-  build(): Block {
-    return Block.create('gdxfor_menu_tiltAnyOptions').withField('tiltAnyOptions', this.tiltAnyOptions);
-  }
+export function TiltOptionsMenu(tiltOptions: string): Block {
+  ck(tiltOptions, 'tiltOptions');
+  return Block.create('gdxfor_menu_tiltOptions').withField('tiltOptions', tiltOptions);
 }
 
-export class TiltOptionsMenu {
-  constructor(public tiltOptions: string) {}
-  build(): Block { return Block.create('gdxfor_menu_tiltOptions').withField('tiltOptions', this.tiltOptions); }
-}
-
-export class AxisOptionsMenu {
-  constructor(public axisOptions: string) {}
-  build(): Block { return Block.create('gdxfor_menu_axisOptions').withField('axisOptions', this.axisOptions); }
+export function AxisOptionsMenu(axisOptions: string): Block {
+  ck(axisOptions, 'axisOptions');
+  return Block.create('gdxfor_menu_axisOptions').withField('axisOptions', axisOptions);
 }

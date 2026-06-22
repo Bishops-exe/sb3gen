@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { Expose, Transform, Type, instanceToPlain, plainToInstance } from 'class-transformer';
 import { IsArray, IsEnum, ValidateNested } from 'class-validator';
 import Meta from './Meta';
-import Extension from './Extensions';
+import Extension, { EXTENSION_PREFIXES } from './Extensions';
 import { ScalarMonitorClass, ListMonitorClass } from './monitor/Monitor';
 import type { Monitor } from './monitor/Monitor';
 import { Stage, Sprite } from './Target';
@@ -60,16 +60,37 @@ export default class Project {
   }
 
   serialize(): string {
+    for (const target of this.targets) {
+      for (const block of Object.values(target.blocks.toRecord())) {
+        for (const [prefix, ext] of EXTENSION_PREFIXES) {
+          if (block.opcode.startsWith(prefix)) { this.extensions.add(ext); break; }
+        }
+      }
+    }
     return JSON.stringify(instanceToPlain(this, { excludeExtraneousValues: true }));
   }
 
-  addStage(stage: Stage): this {
+  addStage(): Stage;
+  addStage(stage: Stage): this;
+  addStage(stage?: Stage): Stage | this {
+    if (!stage) {
+      const s = new Stage();
+      this.targets.push(s);
+      return s;
+    }
     this.targets.push(stage);
     return this;
   }
 
-  addSprite(sprite: Sprite): this {
-    this.targets.push(sprite);
+  addSprite(name: string): Sprite;
+  addSprite(sprite: Sprite): this;
+  addSprite(nameOrSprite: string | Sprite): Sprite | this {
+    if (typeof nameOrSprite === 'string') {
+      const s = new Sprite(nameOrSprite);
+      this.targets.push(s);
+      return s;
+    }
+    this.targets.push(nameOrSprite);
     return this;
   }
 
@@ -81,5 +102,13 @@ export default class Project {
   addExtension(extension: Extension): this {
     this.extensions.add(extension);
     return this;
+  }
+
+  async save(filename: string): Promise<void> {
+    const { default: Zipper } = await import('../builder/Zipper');
+    const bytes = await new Zipper(this).buildToBytes();
+    // @ts-ignore — fs is a Node.js built-in; no @types/node required at library build time
+    const { writeFileSync } = await import('fs');
+    writeFileSync(filename, bytes);
   }
 }

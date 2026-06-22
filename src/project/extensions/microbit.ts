@@ -1,85 +1,110 @@
-import { Block } from '../block/Block';
-import { InputVal } from '../block/InputVal';
+import { Block, CompoundBlock } from '../block/Block';
+import { InputVal, Val } from '../block/InputVal';
+import { ck } from '../block/validate';
 
-export class WhenButtonPressed {
-  constructor(public btn: InputVal) {}
-  build(): Block { return Block.create('microbit_whenButtonPressed').withInput('BTN', this.btn); }
+const c = InputVal.coerce;
+
+function sh(main: string, input: string, menuOp: string, field: string, val: string): CompoundBlock {
+  return { main: Block.create(main), slots: [{ inputName: input, block: Block.create(menuOp).withField(field, val) }] };
 }
 
-export class IsButtonPressed {
-  constructor(public btn: InputVal) {}
-  build(): Block { return Block.create('microbit_isButtonPressed').withInput('BTN', this.btn); }
+export function WhenButtonPressed(btn: string): CompoundBlock;
+export function WhenButtonPressed(btn: InputVal): Block;
+export function WhenButtonPressed(btn: string | InputVal): Block | CompoundBlock {
+  ck(btn, 'btn');
+  if (typeof btn === 'string') return sh('microbit_whenButtonPressed', 'BTN', 'microbit_menu_buttons', 'buttons', btn);
+  return Block.create('microbit_whenButtonPressed').withInput('BTN', btn);
 }
 
-export class WhenGesture {
-  constructor(public gesture: InputVal) {}
-  build(): Block { return Block.create('microbit_whenGesture').withInput('GESTURE', this.gesture); }
+export function IsButtonPressed(btn: string): CompoundBlock;
+export function IsButtonPressed(btn: InputVal): Block;
+export function IsButtonPressed(btn: string | InputVal): Block | CompoundBlock {
+  ck(btn, 'btn');
+  if (typeof btn === 'string') return sh('microbit_isButtonPressed', 'BTN', 'microbit_menu_buttons', 'buttons', btn);
+  return Block.create('microbit_isButtonPressed').withInput('BTN', btn);
 }
 
-export class DisplaySymbol {
-  constructor(public matrix: InputVal) {}
-  build(): Block { return Block.create('microbit_displaySymbol').withInput('MATRIX', this.matrix); }
+export function WhenGesture(gesture: string): CompoundBlock;
+export function WhenGesture(gesture: InputVal): Block;
+export function WhenGesture(gesture: string | InputVal): Block | CompoundBlock {
+  ck(gesture, 'gesture');
+  if (typeof gesture === 'string') return sh('microbit_whenGesture', 'GESTURE', 'microbit_menu_gestures', 'gestures', gesture);
+  return Block.create('microbit_whenGesture').withInput('GESTURE', gesture);
 }
 
-export class DisplayText {
-  constructor(public text: InputVal) {}
-  build(): Block { return Block.create('microbit_displayText').withInput('TEXT', this.text); }
+export function DisplaySymbol(matrix: string): CompoundBlock;
+export function DisplaySymbol(matrix: InputVal): Block;
+export function DisplaySymbol(matrix: string | InputVal): Block | CompoundBlock {
+  ck(matrix, 'matrix');
+  if (typeof matrix === 'string') return sh('microbit_displaySymbol', 'MATRIX', 'matrix', 'MATRIX', matrix);
+  return Block.create('microbit_displaySymbol').withInput('MATRIX', matrix);
 }
 
-export class DisplayClear {
-  build(): Block { return Block.create('microbit_displayClear'); }
+export function DisplayText(text: Val): Block {
+  ck(text, 'text');
+  return Block.create('microbit_displayText').withInput('TEXT', c(text));
 }
 
-export class WhenTilted {
-  constructor(public direction: InputVal) {}
-  build(): Block { return Block.create('microbit_whenTilted').withInput('DIRECTION', this.direction); }
+export function DisplayClear(): Block { return Block.create('microbit_displayClear'); }
+
+export function WhenTilted(direction: string): CompoundBlock;
+export function WhenTilted(direction: InputVal): Block;
+export function WhenTilted(direction: string | InputVal): Block | CompoundBlock {
+  ck(direction, 'direction');
+  if (typeof direction === 'string') return sh('microbit_whenTilted', 'DIRECTION', 'microbit_menu_tiltDirectionAny', 'tiltDirectionAny', direction);
+  return Block.create('microbit_whenTilted').withInput('DIRECTION', direction);
 }
 
-export class IsTilted {
-  constructor(public direction: InputVal) {}
-  build(): Block { return Block.create('microbit_isTilted').withInput('DIRECTION', this.direction); }
+export function IsTilted(direction: string): CompoundBlock;
+export function IsTilted(direction: InputVal): Block;
+export function IsTilted(direction: string | InputVal): Block | CompoundBlock {
+  ck(direction, 'direction');
+  if (typeof direction === 'string') return sh('microbit_isTilted', 'DIRECTION', 'microbit_menu_tiltDirectionAny', 'tiltDirectionAny', direction);
+  return Block.create('microbit_isTilted').withInput('DIRECTION', direction);
 }
 
-export class GetTiltAngle {
-  constructor(public direction: InputVal) {}
-  build(): Block { return Block.create('microbit_getTiltAngle').withInput('DIRECTION', this.direction); }
+export function GetTiltAngle(direction: string): CompoundBlock;
+export function GetTiltAngle(direction: InputVal): Block;
+export function GetTiltAngle(direction: string | InputVal): Block | CompoundBlock {
+  ck(direction, 'direction');
+  if (typeof direction === 'string') return sh('microbit_getTiltAngle', 'DIRECTION', 'microbit_menu_tiltDirection', 'tiltDirection', direction);
+  return Block.create('microbit_getTiltAngle').withInput('DIRECTION', direction);
 }
 
-export class WhenPinConnected {
-  constructor(public pin: InputVal) {}
-  build(): Block { return Block.create('microbit_whenPinConnected').withInput('PIN', this.pin); }
+export function WhenPinConnected(pin: string): CompoundBlock;
+export function WhenPinConnected(pin: InputVal): Block;
+export function WhenPinConnected(pin: string | InputVal): Block | CompoundBlock {
+  ck(pin, 'pin');
+  if (typeof pin === 'string') return sh('microbit_whenPinConnected', 'PIN', 'microbit_menu_touchPins', 'touchPins', pin);
+  return Block.create('microbit_whenPinConnected').withInput('PIN', pin);
 }
 
-export class ButtonsMenu {
-  constructor(public buttons: string) {}
-  build(): Block { return Block.create('microbit_menu_buttons').withField('buttons', this.buttons); }
+export function ButtonsMenu(buttons: string): Block {
+  ck(buttons, 'buttons');
+  return Block.create('microbit_menu_buttons').withField('buttons', buttons);
 }
 
-export class GesturesMenu {
-  constructor(public gestures: string) {}
-  build(): Block { return Block.create('microbit_menu_gestures').withField('gestures', this.gestures); }
+export function GesturesMenu(gestures: string): Block {
+  ck(gestures, 'gestures');
+  return Block.create('microbit_menu_gestures').withField('gestures', gestures);
 }
 
-export class TiltDirectionAnyMenu {
-  constructor(public tiltDirectionAny: string) {}
-  build(): Block {
-    return Block.create('microbit_menu_tiltDirectionAny').withField('tiltDirectionAny', this.tiltDirectionAny);
-  }
+export function TiltDirectionAnyMenu(tiltDirectionAny: string): Block {
+  ck(tiltDirectionAny, 'tiltDirectionAny');
+  return Block.create('microbit_menu_tiltDirectionAny').withField('tiltDirectionAny', tiltDirectionAny);
 }
 
-export class TiltDirectionMenu {
-  constructor(public tiltDirection: string) {}
-  build(): Block {
-    return Block.create('microbit_menu_tiltDirection').withField('tiltDirection', this.tiltDirection);
-  }
+export function TiltDirectionMenu(tiltDirection: string): Block {
+  ck(tiltDirection, 'tiltDirection');
+  return Block.create('microbit_menu_tiltDirection').withField('tiltDirection', tiltDirection);
 }
 
-export class TouchPinsMenu {
-  constructor(public touchPins: string) {}
-  build(): Block { return Block.create('microbit_menu_touchPins').withField('touchPins', this.touchPins); }
+export function TouchPinsMenu(touchPins: string): Block {
+  ck(touchPins, 'touchPins');
+  return Block.create('microbit_menu_touchPins').withField('touchPins', touchPins);
 }
 
-export class MatrixMenu {
-  constructor(public matrix: string) {}
-  build(): Block { return Block.create('matrix').withField('MATRIX', this.matrix); }
+export function MatrixMenu(matrix: string): Block {
+  ck(matrix, 'matrix');
+  return Block.create('matrix').withField('MATRIX', matrix);
 }

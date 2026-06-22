@@ -21,6 +21,7 @@
     "reflect-metadata": "^0.2.2",
     "spark-md5": "^3.0.2"
   },
+  "repository": "github:Bishops-exe/sb3gen",
   "devDependencies": {
     "@types/spark-md5": "^3.0.5",
     "typescript": "^6.0.3"

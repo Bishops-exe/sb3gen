@@ -13,7 +13,7 @@ const sprite = project.addSprite('Cat');
 sprite.costumes.push(Costume.circle('costume1', '#4C97FF', 100));
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(SayForSecs('Hello, World!', 2));
 });
 
@@ -58,17 +58,17 @@ Pass any `new Costume(name, uint8Array)` for custom PNG/SVG data.
 
 ```js
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(MoveSteps(10));
 
-  s.forever(inner => {
+  s.push(Forever(inner => {
     inner.push(MoveSteps(10));
-    inner.push(IfOnEdgeBounce);
-  });
+    inner.push(IfOnEdgeBounce());
+  }));
 
-  s.repeat(5, inner => {
+  s.push(Repeat(5, inner => {
     inner.push(TurnRight(72));
-  });
+  }));
 
   // embed a reporter block as an input value
   s.push(GoToXY(
@@ -76,7 +76,7 @@ sprite.addScript(s => {
     s.embed(Random(-150, 150))
   ));
 
-  s.xy(300, 100); // set script position in the editor
+  s.setXY(300, 100); // set script position in the editor
 });
 ```
 
@@ -104,10 +104,10 @@ Extensions are auto-detected from opcodes when you call `project.save()`. Import
 ```js
 import { pen, music } from 'sb3gen';
 
-s.push(pen.PenClear);
+s.push(pen.PenClear());
 s.push(pen.SetPenColor(InputVal.color('#FFD700')));
 s.push(pen.SetPenSize(4));
-s.push(pen.PenDown);
+s.push(pen.PenDown());
 ```
 
 Available namespaces: `pen`, `music`, `wedo2`, `boost`, `ev3`, `gdxfor`, `makeymakey`, `microbit`, `translate`, `text2speech`, `videoSensing`, `faceSensing`.
@@ -123,7 +123,7 @@ const project = await Zipper.decode(readFileSync('input.sb3'));
 const sprite = project.targets.find(t => !t.isStage);
 sprite.name = 'Renamed';
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(Say('Injected!'));
 });
 
@@ -134,21 +134,21 @@ await project.save('output.sb3');
 
 Run any example with `bun run examples/<file>`:
 
-| File | Demonstrates |
-|------|-------------|
-| `01-hello-world.js` | Basic project, sprite, say block |
-| `02-bouncing-ball.js` | `forever`, `IfOnEdgeBounce` |
-| `03-counter.js` | Variables, `ChangeVariableBy` |
-| `04-broadcast.js` | `addBroadcast`, `WhenIReceive`, two sprites |
-| `05-edit-existing.js` | `Zipper.decode`, mutate and re-save |
-| `06-clones.js` | `CreateCloneOf`, `WhenIStartAsAClone`, `s.embed` |
-| `07-operators.js` | Math and logic reporter blocks |
-| `08-if-else.js` | `s.ifElse`, conditionals |
-| `09-pen-star.js` | Pen extension, `repeat` |
-| `10-sensing-quiz.js` | `ask`/`answer`, sensing blocks |
-| `11-animation.js` | Costume switching, timing |
-| `12-lists.js` | `addList`, `ItemOfList`, nested embeds |
-| `13-monitors.js` | Stage monitors |
+| File                  | Demonstrates                                     |
+|-----------------------|--------------------------------------------------|
+| `01-hello-world.js`   | Basic project, sprite, say block                 |
+| `02-bouncing-ball.js` | `forever`, `IfOnEdgeBounce`                      |
+| `03-counter.js`       | Variables, `ChangeVariableBy`                    |
+| `04-broadcast.js`     | `addBroadcast`, `WhenIReceive`, two sprites      |
+| `05-edit-existing.js` | `Zipper.decode`, mutate and re-save              |
+| `06-clones.js`        | `CreateCloneOf`, `WhenIStartAsAClone`, `s.embed` |
+| `07-operators.js`     | Math and logic reporter blocks                   |
+| `08-if-else.js`       | `s.ifElse`, conditionals                         |
+| `09-pen-star.js`      | Pen extension, `repeat`                          |
+| `10-sensing-quiz.js`  | `ask`/`answer`, sensing blocks                   |
+| `11-animation.js`     | Costume switching, timing                        |
+| `12-lists.js`         | `addList`, `ItemOfList`, nested embeds           |
+| `13-monitors.js`      | Stage monitors                                   |
 
 ## Building
 

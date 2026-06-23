@@ -5,9 +5,9 @@ function buildSubstack(body: (s: Script) => void): {firstId: string; record: Rec
   const inner = new Script();
   body(inner);
   const record = inner.toRecord();
-  const entries = Object.entries(record);
-  if (entries.length === 0) return null;
-  return {firstId: entries[0][0], record};
+  const firstEntry = Object.entries(record).find(([, b]) => b.topLevel);
+  if (!firstEntry) return null;
+  return {firstId: firstEntry[0], record};
 }
 
 export function Forever(body: (s: Script) => void): SubstackBlock | Block {

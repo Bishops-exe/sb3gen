@@ -34,7 +34,16 @@ export namespace InputVal {
   export const posInt = (value: number): InputVal => ({ kind: 'posInt', value });
   export const int = (value: number): InputVal => ({ kind: 'int', value });
   export const angle = (value: number): InputVal => ({ kind: 'angle', value });
-  export const color = (value: string): InputVal => ({ kind: 'color', value });
+  export const color = (value: string | number): InputVal => {
+    if (typeof value === "number") {
+      value = "#" + value.toString(16).padStart(6, '0').toUpperCase();
+    }
+
+    return {
+      kind: 'color',
+      value
+    }
+  };
   export const str = (value: string): InputVal => ({ kind: 'str', value });
   export const broadcast = (name: string, id: string): InputVal => ({ kind: 'broadcast', name, id });
   export const varRef = (name: string, id: string): InputVal => ({ kind: 'var', name, id });

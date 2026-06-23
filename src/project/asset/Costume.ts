@@ -52,8 +52,10 @@ export default class Costume {
   }
 
   static circle(name: string, color: string, radius = 40): Costume {
+    const diameter = radius * 2;
+
     return new Costume(name, `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${radius} ${radius}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${diameter} ${diameter}">
         <circle cx="${radius}" cy="${radius}" r="${radius - 2}" fill="${color}"/>
        </svg>
     `);

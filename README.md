@@ -112,6 +112,37 @@ s.push(pen.PenDown());
 
 Available namespaces: `pen`, `music`, `wedo2`, `boost`, `ev3`, `gdxfor`, `makeymakey`, `microbit`, `translate`, `text2speech`, `videoSensing`, `faceSensing`.
 
+### Custom blocks
+
+Define reusable custom blocks with the procedures API:
+
+```js
+import { procedure, DefineBlock, CallBlock, ArgumentReporterStringNumber, If } from 'sb3gen';
+
+// Create a spec once — reuse for both define and call
+const greet = procedure('greet %s loudly: %b', [
+  { name: 'name',  type: 'string_number' },
+  { name: 'shout', type: 'boolean' },
+]);
+
+// Definition script
+sprite.addScript(s => {
+  s.push(DefineBlock(greet));
+  s.push(If(
+    s.embed(ArgumentReporterBoolean('shout')),
+    inner => { inner.push(Say(inner.embed(ArgumentReporterStringNumber('name')))); },
+  ));
+});
+
+// Call site
+sprite.addScript(s => {
+  s.push(WhenFlagClicked());
+  s.push(CallBlock(greet, [InputVal.str('World'), s.embed(Eq(1, 1))]));
+});
+```
+
+Pass `warp: true` as the third argument to `procedure()` to run without screen refresh. Inside a control block callback (`inner =>`), use `inner.embed()` — not `s.embed()`.
+
 ### Editing existing `.sb3` files
 
 ```js
@@ -143,12 +174,13 @@ Run any example with `bun run examples/<file>`:
 | `05-edit-existing.js` | `Zipper.decode`, mutate and re-save              |
 | `06-clones.js`        | `CreateCloneOf`, `WhenIStartAsAClone`, `s.embed` |
 | `07-operators.js`     | Math and logic reporter blocks                   |
-| `08-if-else.js`       | `s.ifElse`, conditionals                         |
+| `08-if-else.js`       | `If`, `IfElse`, conditionals                     |
 | `09-pen-star.js`      | Pen extension, `repeat`                          |
 | `10-sensing-quiz.js`  | `ask`/`answer`, sensing blocks                   |
 | `11-animation.js`     | Costume switching, timing                        |
 | `12-lists.js`         | `addList`, `ItemOfList`, nested embeds           |
 | `13-monitors.js`      | Stage monitors                                   |
+| `14-custom-blocks.js` | `procedure`, `DefineBlock`, `CallBlock`          |
 
 ## Building
 

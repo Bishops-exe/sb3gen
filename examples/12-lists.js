@@ -23,7 +23,7 @@ const sprite = project.addSprite('Picker');
 sprite.costumes.push(Costume.rect('costume1', '#E91E63', 80, 80, 8));
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(DeleteAllOfList(colors));
   for (const color of ['red', 'orange', 'yellow', 'green', 'blue', 'violet']) {
     s.push(AddToList(color, colors));

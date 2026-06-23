@@ -1,5 +1,6 @@
-import { ListMonitorClass, ScalarMonitorClass, ScalarMonitorOpcode, VariableValue } from './Monitor';
-import ScalarBuilder from './ScalarBuilder';
+import { ListMonitorClass, ScalarMonitorClass, ScalarMonitorMode, ScalarMonitorOpcode, VariableValue } from './Monitor';
+import { Sprite } from '../Target';
+import type { VarInputVal, ListInputVal } from '../block/InputVal';
 
 export enum NumberName {
   Number = 'number',
@@ -16,108 +17,130 @@ export enum CurrentMenu {
   Second = 'SECOND',
 }
 
+export interface ScalarMonitorOpts {
+  spriteName?: Sprite | string | null;
+  mode?: ScalarMonitorMode;
+  value?: VariableValue;
+  x?: number;
+  y?: number;
+  visible?: boolean;
+  width?: number;
+  height?: number;
+  sliderMin?: number;
+  sliderMax?: number;
+  isDiscrete?: boolean;
+}
+
+export interface ListMonitorOpts {
+  spriteName?: Sprite | string | null;
+  value?: VariableValue[];
+  x?: number;
+  y?: number;
+  visible?: boolean;
+  width?: number;
+  height?: number;
+}
+
+function resolveSpriteName(s: Sprite | string | null | undefined): string | null {
+  if (s == null) return null;
+  return typeof s === 'string' ? s : s.name;
+}
+
+function buildScalar(id: string, opcode: ScalarMonitorOpcode, params: Record<string, string> = {}, opts: ScalarMonitorOpts = {}): ScalarMonitorClass {
+  const m = new ScalarMonitorClass();
+  m.id = id;
+  m.mode = opts.mode ?? ScalarMonitorMode.default;
+  m.opcode = opcode;
+  m.params = params;
+  m.sprite = opts.spriteName ?? null;
+  m.value = opts.value ?? 0;
+  m.width = opts.width ?? 0;
+  m.height = opts.height ?? 0;
+  m.x = opts.x ?? 0;
+  m.y = opts.y ?? 0;
+  m.visible = opts.visible ?? true;
+  m.sliderMin = opts.sliderMin ?? 0;
+  m.sliderMax = opts.sliderMax ?? 100;
+  m.isDiscrete = opts.isDiscrete ?? true;
+  return m;
+}
+
 // ── Motion ────────────────────────────────────────────────────────────────────
 
-export class XPosition extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.motionXposition); }
+export function XPosition(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.motionXposition, {}, opts);
 }
 
-export class YPosition extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.motionYposition); }
+export function YPosition(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.motionYposition, {}, opts);
 }
 
-export class Direction extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.motionDirection); }
+export function Direction(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.motionDirection, {}, opts);
 }
 
 // ── Looks ─────────────────────────────────────────────────────────────────────
 
-export class CostumeNumberName extends ScalarBuilder {
-  constructor(id: string, public numberName: NumberName) { super(id); }
-  build(): ScalarMonitorClass {
-    return this.buildScalar(ScalarMonitorOpcode.looksCostumenumbername, { NUMBER_NAME: this.numberName });
-  }
+export function CostumeNumberName(id: string, numberName: NumberName, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.looksCostumenumbername, { NUMBER_NAME: numberName }, opts);
 }
 
-export class BackdropNumberName extends ScalarBuilder {
-  constructor(id: string, public numberName: NumberName) { super(id); }
-  build(): ScalarMonitorClass {
-    return this.buildScalar(ScalarMonitorOpcode.looksBackdropnumbername, { NUMBER_NAME: this.numberName });
-  }
+export function BackdropNumberName(id: string, numberName: NumberName, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.looksBackdropnumbername, { NUMBER_NAME: numberName }, opts);
 }
 
-export class Size extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.looksSize); }
+export function Size(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.looksSize, {}, opts);
 }
 
 // ── Sound ─────────────────────────────────────────────────────────────────────
 
-export class Volume extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.soundVolume); }
+export function Volume(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.soundVolume, {}, opts);
 }
 
 // ── Sensing ───────────────────────────────────────────────────────────────────
 
-export class Answer extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.sensingAnswer); }
+export function Answer(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.sensingAnswer, {}, opts);
 }
 
-export class Loudness extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.sensingLoudness); }
+export function Loudness(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.sensingLoudness, {}, opts);
 }
 
-export class Timer extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.sensingTimer); }
+export function Timer(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.sensingTimer, {}, opts);
 }
 
-export class Online extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.sensingOnline); }
+export function Online(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.sensingOnline, {}, opts);
 }
 
-export class Username extends ScalarBuilder {
-  build(): ScalarMonitorClass { return this.buildScalar(ScalarMonitorOpcode.sensingUsername); }
+export function Username(id: string, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.sensingUsername, {}, opts);
 }
 
-export class Current extends ScalarBuilder {
-  constructor(id: string, public currentMenu: CurrentMenu) { super(id); }
-  build(): ScalarMonitorClass {
-    return this.buildScalar(ScalarMonitorOpcode.sensingCurrent, { CURRENTMENU: this.currentMenu });
-  }
+export function Current(id: string, currentMenu: CurrentMenu, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(id, ScalarMonitorOpcode.sensingCurrent, { CURRENTMENU: currentMenu }, opts);
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
-export class Variable extends ScalarBuilder {
-  constructor(id: string, public variable: string) { super(id); }
-  build(): ScalarMonitorClass {
-    return this.buildScalar(ScalarMonitorOpcode.dataVariable, { VARIABLE: this.variable });
-  }
+export function Variable(variable: VarInputVal, opts?: ScalarMonitorOpts): ScalarMonitorClass {
+  return buildScalar(variable.id, ScalarMonitorOpcode.dataVariable, { VARIABLE: variable.name }, opts);
 }
 
-export class ListContents {
-  spriteName: string | null = null;
-  value: VariableValue[] = [];
-  x = 0;
-  y = 0;
-  visible = true;
-  width = 0;
-  height = 0;
-
-  constructor(public readonly id: string, public list: string) {}
-
-  build(): ListMonitorClass {
-    const m = new ListMonitorClass();
-    m.id = this.id;
-    m.mode = 'list';
-    m.opcode = 'data_listcontents';
-    m.params = { LIST: this.list };
-    m.spriteName = this.spriteName;
-    m.value = this.value;
-    m.width = this.width;
-    m.height = this.height;
-    m.x = this.x;
-    m.y = this.y;
-    m.visible = this.visible;
-    return m;
-  }
+export function ListContents(list: ListInputVal, opts?: ListMonitorOpts): ListMonitorClass {
+  const m = new ListMonitorClass();
+  m.id = list.id;
+  m.params = { LIST: list.name };
+  m.spriteName = resolveSpriteName(opts?.spriteName);
+  m.value = opts?.value ?? [];
+  m.width = opts?.width ?? 0;
+  m.height = opts?.height ?? 0;
+  m.x = opts?.x ?? 0;
+  m.y = opts?.y ?? 0;
+  m.visible = opts?.visible ?? true;
+  return m;
 }

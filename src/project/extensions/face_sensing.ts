@@ -3,7 +3,7 @@ import { ck } from '../block/validate';
 
 export function GoToPart(part: string): Block {
   ck(part, 'part');
-  return Block.create('faceSensing_goToPart').withField('PART', part);
+  return Block.create('faceSensing_goToPart').addField('PART', part);
 }
 
 export function PointInFaceTiltDirection(): Block {
@@ -14,12 +14,12 @@ export function SetSizeToFaceSize(): Block { return Block.create('faceSensing_se
 
 export function WhenTilted(direction: string): Block {
   ck(direction, 'direction');
-  return Block.create('faceSensing_whenTilted').withField('DIRECTION', direction);
+  return Block.create('faceSensing_whenTilted').addField('DIRECTION', direction);
 }
 
 export function WhenSpriteTouchesPart(part: string): Block {
   ck(part, 'part');
-  return Block.create('faceSensing_whenSpriteTouchesPart').withField('PART', part);
+  return Block.create('faceSensing_whenSpriteTouchesPart').addField('PART', part);
 }
 
 export function WhenFaceDetected(): Block { return Block.create('faceSensing_whenFaceDetected'); }

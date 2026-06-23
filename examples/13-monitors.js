@@ -25,38 +25,24 @@ const sprite = project.addSprite('Player');
 sprite.costumes.push(Costume.circle('costume1', '#8BC34A', 60));
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(SetVariableTo(0, score));
 });
 
 // 1. Default scalar monitor
-const scoreMonitor      = new monitors.Variable(score.id, score.name);
-scoreMonitor.x          = 10;
-scoreMonitor.y          = 10;
-scoreMonitor.visible    = true;
-scoreMonitor.spriteName = null;
+project.addMonitor(monitors.Variable(score, { x: 10, y: 10 }));
 
 // 2. Slider monitor
-const speedMonitor      = new monitors.Variable(speed.id, speed.name);
-speedMonitor.x          = 10;
-speedMonitor.y          = 40;
-speedMonitor.visible    = true;
-speedMonitor.mode       = ScalarMonitorMode.slider;
-speedMonitor.sliderMin  = 1;
-speedMonitor.sliderMax  = 10;
-speedMonitor.isDiscrete = true;
+project.addMonitor(monitors.Variable(speed, {
+  x: 10, y: 40,
+  mode: ScalarMonitorMode.slider,
+  sliderMin: 1, sliderMax: 10, isDiscrete: true,
+}));
 
 // 3. List monitor
-const itemsMonitor   = new monitors.ListContents(items.id, items.name);
-itemsMonitor.x       = 200;
-itemsMonitor.y       = 10;
-itemsMonitor.width   = 130;
-itemsMonitor.height  = 160;
-itemsMonitor.visible = true;
-
-project.addMonitor(scoreMonitor.build());
-project.addMonitor(speedMonitor.build());
-project.addMonitor(itemsMonitor.build());
+project.addMonitor(monitors.ListContents(items, {
+  x: 200, y: 10, width: 130, height: 160,
+}));
 
 await project.save(`${import.meta.dir}/monitors.sb3`);
 console.log('Written monitors.sb3');

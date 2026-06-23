@@ -4,6 +4,7 @@
 import {
   Project, Costume,
   WhenFlagClicked, MoveSteps, IfOnEdgeBounce,
+  Forever,
 } from '../src';
 
 const project = new Project();
@@ -15,11 +16,11 @@ sprite.costumes.push(Costume.circle('ball', '#FF6680', 60));
 sprite.direction = 45;
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
-  s.forever(inner => {
+  s.push(WhenFlagClicked());
+  s.push(Forever(inner => {
     inner.push(MoveSteps(10));
-    inner.push(IfOnEdgeBounce);
-  });
+    inner.push(IfOnEdgeBounce());
+  }));
 });
 
 await project.save(`${import.meta.dir}/bouncing-ball.sb3`);

@@ -23,7 +23,7 @@ const sprite = project.addSprite('Math');
 sprite.costumes.push(Costume.circle('costume1', '#5CB1D6', 80));
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(SetVariableTo(s.embed(Random(1, 10)), pick));
   s.push(SetVariableTo(s.embed(Multiply(s.embed(pick), 2)), doubled));
   s.push(SayForSecs(s.embed(Join('pick \xd7 2 = ', s.embed(doubled))), 2));

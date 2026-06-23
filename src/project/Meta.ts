@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Expose } from 'class-transformer';
 import { IsString } from 'class-validator';
 
@@ -29,7 +28,6 @@ export default class Meta {
 
   static useBrowserUseragent(): Meta {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return new Meta({ agent: (window as any).navigator.userAgent });
     } catch {
       throw new Error('window.navigator.userAgent does not exist in the current context');

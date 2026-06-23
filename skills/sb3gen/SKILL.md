@@ -10,8 +10,7 @@ description: >
 ---
 
 You are an expert at generating Scratch 3 projects using the `sb3gen` TypeScript library.
-Always import from `sb3gen`. You can run this skill everywhere, even in the web. 
-Note: the `Project.save();` function will not work, use `await new Zipper().buildToBytes(); // Uint8Array`
+Always import from `sb3gen`. Use `project.save(filename)` when running in Node/Bun. In browser environments use `new Zipper(project).buildToBytes()` instead.
 
 ## Core imports
 
@@ -20,20 +19,23 @@ import {
   Project, Stage, Sprite, Script, Block, BlocksMap,
   InputVal, Zipper, Costume, Sound, Comment,
   WhenFlagClicked, WhenThisSpriteClicked, WhenKeyPressed,
+  pen, music, // extension namespaces are named exports
   // ...any block factory functions needed
 } from 'sb3gen';
-import * as pen from 'sb3gen/pen';   // extension namespaces
-import * as music from 'sb3gen/music';
 ```
 
 ## Project structure
 
 ```typescript
 const project = new Project();
-const stage = project.addStage();   // returns Stage
-const sprite = project.addSprite('Cat');  // returns Sprite
+const stage = project.addStage();        // returns Stage
+const sprite = project.addSprite('Cat'); // returns Sprite
 
-await project.save('output.sb3');   // writes the .sb3 file
+// Node/Bun: write directly to disk
+await project.save('output.sb3');
+
+// Browser / any env: get raw bytes
+const bytes = await new Zipper(project).buildToBytes(); // Uint8Array
 ```
 
 ## Adding scripts to a target
@@ -46,30 +48,32 @@ sprite.addScript(s => {
 });
 ```
 
-## Control flow helpers on Script
+## Control flow — standalone functions, pushed onto Script
+
+Control blocks are imported functions, not Script methods. Pass them to `s.push()`:
 
 ```typescript
-s.forever(inner => {
+s.push(Forever(inner => {
   inner.push(MoveSteps(10));
   inner.push(Wait(0.1));
-});
+}));
 
-s.repeat(10, inner => {
+s.push(Repeat(10, inner => {
   inner.push(TurnRight(36));
-});
+}));
 
-s.if(condition, inner => {
+s.push(If(condition, inner => {
   inner.push(Say('yes'));
-});
+}));
 
-s.ifElse(condition,
+s.push(IfElse(condition,
   inner => inner.push(Say('yes')),
   inner => inner.push(Say('no'))
-);
+));
 
-s.repeatUntil(condition, inner => {
+s.push(RepeatUntil(condition, inner => {
   inner.push(MoveSteps(5));
-});
+}));
 ```
 
 ## Embedding reporter blocks as inputs
@@ -77,9 +81,9 @@ s.repeatUntil(condition, inner => {
 Use `s.embed()` to nest a reporter block inside another block's input:
 
 ```typescript
-s.push(Say(s.embed(XPosition())));        // embed reporter
+s.push(Say(s.embed(MotionXPosition())));  // embed reporter
 s.push(Say(s.embed(myVar)));              // embed variable ref
-s.push(SetXTo(s.embed(Add(1, 2))));       // embed operator
+s.push(SetX(s.embed(Add(1, 2))));         // embed operator
 ```
 
 ## Variables, lists, broadcasts
@@ -87,14 +91,15 @@ s.push(SetXTo(s.embed(Add(1, 2))));       // embed operator
 Declare on the target before use. Returns a typed ref (`VarInputVal`, `ListInputVal`, `BroadcastInputVal`):
 
 ```typescript
-const score = sprite.addVariable('score', 0);   // initial value optional
+const score = sprite.addVariable('score', 0); // initial value optional
 const items = sprite.addList('items', []);
 const msg   = stage.addBroadcast('start');
 
-// Use the ref as an InputVal:
-s.push(SetVariableTo(score, 100));
-s.push(AddToList(items, 'apple'));
-s.push(Broadcast(InputVal.broadcast(msg.name, msg.id)));
+// Use the ref directly — note: value comes FIRST for variable/list blocks
+s.push(SetVariableTo(100, score));
+s.push(ChangeVariableBy(1, score));
+s.push(AddToList('apple', items));
+s.push(Broadcast(msg));
 
 // Embed as reporter:
 s.push(Say(s.embed(score)));
@@ -126,11 +131,11 @@ InputVal.angle(90)
 | `ListParam`      | `string \| ListInputVal`       |
 | `BroadcastParam` | `string \| BroadcastInputVal`  |
 
-## Block factory functions (from Blocks.ts)
+## Block factory functions
 
 ### Events
 `WhenFlagClicked()`, `WhenThisSpriteClicked()`, `WhenKeyPressed(key)`,
-`WhenIReceive(broadcastParam)`, `Broadcast(inputVal)`, `BroadcastAndWait(inputVal)`,
+`WhenIReceive(broadcastParam)`, `Broadcast(broadcastInput)`, `BroadcastAndWait(broadcastInput)`,
 `WhenBackdropSwitchesTo(backdrop)`, `WhenGreaterThan(value, menu)`
 
 ### Motion
@@ -149,44 +154,49 @@ InputVal.angle(90)
 `SwitchBackdropTo(name | inputVal)`, `NextBackdrop()`
 
 ### Sound
-`PlaySound(name | inputVal)`, `PlaySoundUntilDone(name | inputVal)`,
+`StartSound(soundMenu)`, `PlaySoundUntilDone(soundMenu)`,
 `StopAllSounds()`, `SetVolumeTo(n)`, `ChangeVolumeBy(n)`
 
 ### Control
-`Wait(secs)`, `StopAll()` / `StopThisScript()` / `StopOtherScripts()`,
-`WhenIStartAsClone()`, `CreateCloneOf(target)`, `DeleteThisClone()`
+`Wait(secs)`, `WaitUntil(condition)`,
+`Stop('all' | 'this script' | 'other scripts in sprite')`,
+`WhenIStartAsAClone()`, `CreateCloneOf(target)`, `DeleteThisClone()`
 
 ### Sensing
-`Touching(target)`, `TouchingColor(color)`, `ColorIsTouchingColor(c1, c2)`,
-`DistanceTo(target)`, `AskAndWait(question)`, `Answer()`,
+`TouchingObject(touchingObjectMenu)`, `TouchingColor(color)`, `ColorIsTouchingColor(c1, c2)`,
+`DistanceTo(distanceToMenu)`, `AskAndWait(question)`, `SensingAnswer()`,
 `KeyPressed(key)`, `MouseDown()`, `MouseX()`, `MouseY()`,
-`SetDragMode(mode)`, `Timer()`, `ResetTimer()`, `Current(field)`
+`SetDragMode(mode)`, `SensingTimer()`, `ResetTimer()`, `SensingCurrent(currentMenu)`
 
 ### Operators
 `Add(a, b)`, `Subtract(a, b)`, `Multiply(a, b)`, `Divide(a, b)`,
-`Random(from, to)`, `GreaterThan(a, b)`, `LessThan(a, b)`, `Equals(a, b)`,
+`Random(from, to)`, `Gt(a, b)`, `Lt(a, b)`, `Eq(a, b)`,
 `And(a, b)`, `Or(a, b)`, `Not(a)`,
-`Join(s1, s2)`, `LetterOf(n, str)`, `LengthOf(str)`, `Contains(str, substr)`,
-`Mod(a, b)`, `Round(n)`, `MathOp(op, n)` (op: 'abs','floor','ceiling','sqrt', etc.)
+`Join(s1, s2)`, `LetterOf(letter, str)`, `LengthOf(str)`, `Contains(str, substr)`,
+`Mod(a, b)`, `Round(n)`, `MathOp(num, operator)` (operator: `'abs'`, `'floor'`, `'ceiling'`, `'sqrt'`, etc.)
 
-### Data (variables & lists)
-`SetVariableTo(varParam, val)`, `ChangeVariableBy(varParam, val)`,
-`ShowVariable(varParam)`, `HideVariable(varParam)`,
-`AddToList(listParam, item)`, `DeleteFromList(listParam, index)`,
-`DeleteAllOfList(listParam)`, `InsertAtList(listParam, index, item)`,
-`ReplaceItemOfList(listParam, index, item)`, `ItemOfList(listParam, index)`,
-`ItemNumOfList(listParam, item)`, `LengthOfList(listParam)`,
-`ListContains(listParam, item)`, `ShowList(listParam)`, `HideList(listParam)`
+### Data (variables & lists) — value/item comes FIRST, variable/list ref comes LAST
+`SetVariableTo(value, variable)`, `ChangeVariableBy(value, variable)`,
+`ShowVariable(variable)`, `HideVariable(variable)`,
+`AddToList(item, list)`, `DeleteOfList(index, list)`,
+`DeleteAllOfList(list)`, `InsertAtList(item, index, list)`,
+`ReplaceItemOfList(index, item, list)`, `ItemOfList(index, list)`,
+`ItemNumOfList(item, list)`, `LengthOfList(list)`,
+`ListContainsItem(item, list)`, `ShowList(list)`, `HideList(list)`
 
 ## Extensions
 
+Extension namespaces are named exports from `'sb3gen'`:
+
 ```typescript
-import * as pen from 'sb3gen';   // pen.* music.* etc. are re-exported
-// or use the namespace imports:
+import { pen, music } from 'sb3gen';
 
 s.push(pen.PenDown());
-s.push(pen.SetPenColorToColor('#ff0000'));
-s.push(pen.ChangePenSizeBy(1));
+s.push(pen.PenUp());
+s.push(pen.PenClear());
+s.push(pen.SetPenColor(InputVal.color('#ff0000')));
+s.push(pen.SetPenSize(4));
+s.push(pen.ChangePenSize(1));
 s.push(music.PlayDrumForBeats(1, 0.25));
 ```
 
@@ -194,22 +204,19 @@ Extensions auto-register in `project.extensions` when `project.serialize()` / `p
 
 ## Costumes & sounds
 
+Use the factory methods — `assetId`, `md5ext`, `dataFormat` are computed getters, not settable:
+
 ```typescript
 import { Costume } from 'sb3gen';
 
-const c = new Costume();
-c.name = 'costume1';
-c.dataFormat = 'svg';
-c.assetId = '<md5>';        // MD5 of the asset file
-c.md5ext = '<md5>.svg';
-c.rotationCenterX = 0;
-c.rotationCenterY = 0;
+sprite.costumes.push(Costume.blank('backdrop1'));               // white SVG
+sprite.costumes.push(Costume.colored('bg', '#1e1e2e'));        // solid color SVG
+sprite.costumes.push(Costume.circle('ball', '#FF6680', 60));   // circle SVG, radius 60
+sprite.costumes.push(Costume.rect('box', '#4C97FF', 80, 80));  // rect SVG
 
-sprite.costumes.push(c);
-sprite.currentCostume = 0;
+// Raw bytes (PNG/SVG/etc.):
+sprite.costumes.push(new Costume('costume1', uint8ArrayData));
 ```
-
-For actual asset bytes use `Zipper` directly and call `zipper.addFile(name, bytes)`.
 
 ## Building without saving to disk (Zipper)
 
@@ -217,6 +224,7 @@ For actual asset bytes use `Zipper` directly and call `zipper.addFile(name, byte
 import { Zipper } from 'sb3gen';
 
 const bytes = await new Zipper(project).buildToBytes(); // Uint8Array
+const dataUri = await new Zipper(project).buildToDataURI(); // for <a download>
 ```
 
 ## Comments on blocks
@@ -234,9 +242,9 @@ When no factory function exists:
 
 ```typescript
 Block.create('opcode_name')
-  .withInput('INPUT_NAME', InputVal.num(42))
-  .withField('FIELD_NAME', 'value')
-  .withMutation({ hasnext: 'false', ... })
+  .addInput('INPUT_NAME', InputVal.num(42))
+  .addField('FIELD_NAME', 'value')
+  .setMutation({ hasnext: 'false', ... })
 ```
 
 ## Common patterns
@@ -245,10 +253,10 @@ Block.create('opcode_name')
 ```typescript
 sprite.addScript(s => {
   s.push(WhenFlagClicked());
-  s.forever(inner => {
+  s.push(Forever(inner => {
     inner.push(PointTowards('_mouse_'));
     inner.push(MoveSteps(5));
-  });
+  }));
 });
 ```
 
@@ -257,12 +265,12 @@ sprite.addScript(s => {
 const count = sprite.addVariable('count', 0);
 sprite.addScript(s => {
   s.push(WhenFlagClicked());
-  s.push(SetVariableTo(count, 0));
-  s.repeat(10, inner => {
-    inner.push(ChangeVariableBy(count, 1));
+  s.push(SetVariableTo(0, count));
+  s.push(Repeat(10, inner => {
+    inner.push(ChangeVariableBy(1, count));
     inner.push(Say(s.embed(count)));
     inner.push(Wait(0.5));
-  });
+  }));
 });
 ```
 
@@ -272,7 +280,7 @@ const go = stage.addBroadcast('go');
 
 stage.addScript(s => {
   s.push(WhenFlagClicked());
-  s.push(BroadcastAndWait(InputVal.broadcast(go.name, go.id)));
+  s.push(BroadcastAndWait(go));
 });
 
 sprite.addScript(s => {
@@ -283,6 +291,8 @@ sprite.addScript(s => {
 
 ## Gotchas
 
-- `addVariable` / `addList` / `addBroadcast` return the ref object you pass to blocks — call them first so you have the ref.
+- `addVariable` / `addList` / `addBroadcast` return the ref object you pass to blocks — call them first.
 - `s.embed()` queues the block for insertion — do **not** call `s.push()` on the same block.
-- `GoTo`, `GlideTo`, `SwitchCostumeTo`, `SwitchBackdropTo`, `PointTowards` are overloaded: pass a `string` for a named menu option (creates shadow block), pass an `InputVal` for a dynamic value.
+- `GoTo`, `GlideTo`, `SwitchCostumeTo`, `SwitchBackdropTo`, `PointTowards`, `KeyPressed`, `CreateCloneOf` are overloaded: pass a `string` for a named menu option (auto-wires shadow block), pass an `InputVal` for a dynamic value.
+- Data block param order: **value/item first, variable/list ref last** — `SetVariableTo(value, variable)`, `AddToList(item, list)`, etc.
+- Control flow builders (`Forever`, `Repeat`, `If`, `IfElse`, `RepeatUntil`) are standalone imported functions — wrap them in `s.push(...)`.

@@ -10,6 +10,7 @@
 import {
   Project, Costume,
   WhenFlagClicked, SwitchCostumeTo, NextCostume, Wait,
+  Forever,
 } from '../src';
 
 const project = new Project();
@@ -23,12 +24,12 @@ sprite.costumes.push(Costume.circle('frame3', '#FFCC00', 70));
 sprite.currentCostume = 0;
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(SwitchCostumeTo('frame1'));
-  s.forever(inner => {
-    inner.push(NextCostume);
+  s.push(Forever(inner => {
+    inner.push(NextCostume());
     inner.push(Wait(0.1));
-  });
+  }));
 });
 
 await project.save(`${import.meta.dir}/animation.sb3`);

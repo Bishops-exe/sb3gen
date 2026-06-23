@@ -13,7 +13,7 @@ import {
   InputVal,
   WhenFlagClicked, GoToXY, PointInDirection,
   MoveSteps, TurnRight,
-  pen,
+  pen, Repeat,
 } from '../src';
 
 const project = new Project();
@@ -24,18 +24,18 @@ const sprite = project.addSprite('Pen');
 sprite.costumes.push(Costume.circle('tip', 'transparent', 10));
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
-  s.push(pen.PenClear);
+  s.push(WhenFlagClicked());
+  s.push(pen.PenClear());
   s.push(GoToXY(0, -60));
   s.push(PointInDirection(InputVal.angle(0)));
   s.push(pen.SetPenColor(InputVal.color('#FFD700')));
   s.push(pen.SetPenSize(4));
-  s.push(pen.PenDown);
-  s.repeat(5, inner => {
+  s.push(pen.PenDown());
+  s.push(Repeat(5, inner => {
     inner.push(MoveSteps(150));
     inner.push(TurnRight(144));
-  });
-  s.push(pen.PenUp);
+  }));
+  s.push(pen.PenUp());
 });
 
 await project.save(`${import.meta.dir}/pen-star.sb3`);

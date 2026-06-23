@@ -1,45 +1,32 @@
-import 'reflect-metadata';
-import { Expose } from 'class-transformer';
-import { IsNumber, IsString } from 'class-validator';
-import SparkMD5 from "spark-md5";
+import {Expose} from 'class-transformer';
+import {IsString} from 'class-validator';
+import SparkMD5, {ArrayBuffer} from "spark-md5";
 
 export default class Sound {
   @Expose()
-  @IsString()
-  assetId: string;
+  get assetId(): string {
+    return SparkMD5.ArrayBuffer.hash(this.data.buffer as globalThis.ArrayBuffer);
+  }
 
   @Expose()
+  get md5ext(): string {
+    return `${this.assetId}.${this.dataFormat}`;
+  }
+
+  @Expose()
+  get dataFormat(): string {
+    return Sound.detectFormat(this.data);
+  }
+
+  @Expose({name: "name"})
   @IsString()
   name: string;
 
-  @Expose()
-  @IsString()
-  md5ext: string;
+  data: Uint8Array;
 
-  @Expose()
-  @IsString()
-  dataFormat: string;
-
-  @Expose()
-  @IsNumber()
-  rate: number;
-
-  @Expose()
-  @IsNumber()
-  sampleCount: number;
-
-  data?: Uint8Array;
-
-  constructor(
-    name: string,
-    data?: Uint8Array
-  ) {
+  constructor(name: string, data: Uint8Array) {
     this.name = name;
-    if (!data) return;
     this.data = data;
-    this.assetId = SparkMD5.ArrayBuffer.hash(data.buffer as ArrayBuffer);
-    this.dataFormat = Sound.detectFormat(data);
-    this.md5ext = `${this.assetId}.${this.dataFormat}`;
   }
 
   private static detectFormat(data: Uint8Array): string {

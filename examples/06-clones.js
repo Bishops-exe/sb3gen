@@ -12,6 +12,7 @@ import {
   WhenFlagClicked, Wait,
   CreateCloneOf,
   WhenIStartAsAClone, GoToXY, Random, DeleteThisClone,
+  Forever,
 } from '../src';
 
 const project = new Project();
@@ -23,23 +24,23 @@ sprite.costumes.push(Costume.circle('particle', '#FFD700', 20));
 
 // Script 1: forever spawn a clone every 0.5 s
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
-  s.forever(inner => {
+  s.push(WhenFlagClicked());
+  s.push(Forever(inner => {
     inner.push(CreateCloneOf('_myself_'));
     inner.push(Wait(0.5));
-  });
+  }));
 });
 
-// Script 2: clone behaviour
+// Script 2: clone behavior
 sprite.addScript(s => {
-  s.xy(300, 0);
-  s.push(WhenIStartAsAClone);
+  s.setXY(300, 0);
+  s.push(WhenIStartAsAClone());
   s.push(GoToXY(
     s.embed(Random(-200, 200)),
     s.embed(Random(-150, 150))
   ));
   s.push(Wait(1.5));
-  s.push(DeleteThisClone);
+  s.push(DeleteThisClone());
 });
 
 await project.save(`${import.meta.dir}/clones.sb3`);

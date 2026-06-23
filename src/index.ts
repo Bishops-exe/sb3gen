@@ -10,11 +10,12 @@ export { default as Comment } from './project/Comment';
 export { default as Costume } from './project/asset/Costume';
 export { default as Sound } from './project/asset/Sound';
 export { Block, Script, BlocksMap, Input, Field } from './project/block/Block';
-export type { CompoundBlock } from './project/block/Block';
+export type { CompoundBlock, SubstackBlock } from './project/block/Block';
+export { Forever, Repeat, If, IfElse, RepeatUntil } from './project/block/Control';
 export type { VariableValue, VariableInfo } from './project/data/VariableValue';
 export { InputVal, serializeInputVal, deserializeInputVal } from './project/block/InputVal';
 export type { Val, NumVal, VarParam, ListParam, BroadcastParam, VarInputVal, ListInputVal, BroadcastInputVal } from './project/block/InputVal';
-export * from './project/blocks/Blocks';
+export * from './project/block/Blocks';
 export {
   ScalarMonitorClass,
   ListMonitorClass,
@@ -22,9 +23,9 @@ export {
   ScalarMonitorOpcode,
 } from './project/monitor/Monitor';
 export type { Monitor } from './project/monitor/Monitor';
-export { default as ScalarBuilder } from './project/monitor/ScalarBuilder';
 export * as monitors from './project/monitor/Builders';
 export { NumberName, CurrentMenu, ListContents, Variable } from './project/monitor/Builders';
+export type { ScalarMonitorOpts, ListMonitorOpts } from './project/monitor/Builders';
 
 export * as pen from './project/extensions/pen';
 export * as music from './project/extensions/music';

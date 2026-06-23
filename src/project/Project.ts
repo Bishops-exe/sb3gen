@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+import { writeFileSync } from 'fs';
 import { Expose, Transform, Type, instanceToPlain, plainToInstance } from 'class-transformer';
 import { IsArray, IsEnum, ValidateNested } from 'class-validator';
 import Meta from './Meta';
@@ -107,8 +107,6 @@ export default class Project {
   async save(filename: string): Promise<void> {
     const { default: Zipper } = await import('../builder/Zipper');
     const bytes = await new Zipper(this).buildToBytes();
-    // @ts-ignore — fs is a Node.js built-in; no @types/node required at library build time
-    const { writeFileSync } = await import('fs');
     writeFileSync(filename, bytes);
   }
 }

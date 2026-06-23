@@ -19,7 +19,7 @@ const sender = project.addSprite('Sender');
 sender.costumes.push(Costume.circle('costume1', '#5CB1D6', 80));
 sender.x = -80;
 sender.addScript(s => {
-  s.push(WhenThisSpriteClicked);
+  s.push(WhenThisSpriteClicked());
   s.push(BroadcastAndWait(greet));
 });
 

@@ -43,8 +43,8 @@ if (sprite) {
 
 if (sprite) {
   sprite.addScript(s => {
-    s.xy(600, 0);
-    s.push(WhenFlagClicked);
+    s.setXY(600, 0);
+    s.push(WhenFlagClicked());
     s.push(Say('I was injected!'));
   });
 }

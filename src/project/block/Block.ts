@@ -1,7 +1,6 @@
-import 'reflect-metadata';
 import {Expose, Transform, instanceToPlain, plainToInstance} from 'class-transformer';
 import {IsBoolean, IsNumber, IsOptional, IsString} from 'class-validator';
-import {InputVal, Val, VarInputVal, ListInputVal, varName, listName, serializeInputVal, deserializeInputVal} from './InputVal';
+import {InputVal, VarInputVal, ListInputVal, varName, listName, serializeInputVal, deserializeInputVal} from './InputVal';
 import Comment from '../Comment';
 import {getUniqueId} from '../../Utils';
 
@@ -79,6 +78,11 @@ export interface CompoundBlock {
   slots: Array<{inputName: string; block: Block}>;
 }
 
+export interface SubstackBlock {
+  main: Block;
+  substacks: Array<{firstId: string; record: Record<string, Block>}>;
+}
+
 export class Block {
   @Expose()
   @IsString()
@@ -137,27 +141,27 @@ export class Block {
     this.opcode = opcode;
   }
 
-  withInput(name: string, val: InputVal, mode = 1): this {
+  addInput(name: string, val: InputVal, mode = 1): this {
     this.inputs[name] = Input.value(val, mode);
     return this;
   }
 
-  withInputSlot(name: string, input: Input): this {
+  addInputSlot(name: string, input: Input): this {
     this.inputs[name] = input;
     return this;
   }
 
-  withField(name: string, value: string, id: string | null = null): this {
+  addField(name: string, value: string, id: string | null = null): this {
     this.fields[name] = Field.of(value, id);
     return this;
   }
 
-  withMutation(mutation: unknown): this {
+  setMutation(mutation: unknown): this {
     this.mutation = mutation;
     return this;
   }
 
-  withComment(commentId: string): this {
+  setCommentId(commentId: string): this {
     this.comment = commentId;
     return this;
   }
@@ -186,7 +190,7 @@ export class Script {
   }
 
 
-  xy(x: number, y: number): this {
+  setXY(x: number, y: number): this {
     this.x = x;
     this.y = y;
     return this;
@@ -196,8 +200,19 @@ export class Script {
     return getUniqueId();
   }
 
-  push(block: Block | CompoundBlock | (() => Block)): string {
-    if (typeof block === 'function') block = block();
+  push(block: Block | CompoundBlock | SubstackBlock): string {
+    if ('substacks' in block) {
+      const { main, substacks } = block as SubstackBlock;
+      const id = this.genId();
+      this.insertChained(id, main);
+      for (const sub of substacks) {
+        sub.record[sub.firstId].parent = id;
+        sub.record[sub.firstId].topLevel = false;
+        for (const [bid, b] of Object.entries(sub.record)) this._blocks.set(bid, b);
+      }
+      this.drainEmbeds(id, main);
+      return id;
+    }
 
     if (!('opcode' in block)) {
       const { main, slots } = block as CompoundBlock;
@@ -243,8 +258,8 @@ export class Script {
   embed(item: VarInputVal | ListInputVal | Block | CompoundBlock): InputVal {
     if ('kind' in item) {
       const dataBlock = item.kind === 'var'
-        ? Block.create('data_variable').withField('VARIABLE', varName(item as VarInputVal), (item as VarInputVal).id)
-        : Block.create('data_listcontents').withField('LIST', listName(item as ListInputVal), (item as ListInputVal).id);
+        ? Block.create('data_variable').addField('VARIABLE', varName(item as VarInputVal), (item as VarInputVal).id)
+        : Block.create('data_listcontents').addField('LIST', listName(item as ListInputVal), (item as ListInputVal).id);
       const id = this.genId();
       dataBlock.topLevel = false;
       this._pendingEmbeds.push({id, block: dataBlock});
@@ -306,72 +321,6 @@ export class Script {
         }
       }
     }
-  }
-
-  private buildSubstack(body: (s: Script) => void): {firstId: string; record: Record<string, Block>} | null {
-    const inner = new Script();
-    body(inner);
-    const record = inner.toRecord();
-    const entries = Object.entries(record);
-    if (entries.length === 0) return null;
-    return {firstId: entries[0][0], record};
-  }
-
-  private attachSubstack(sub: {firstId: string; record: Record<string, Block>}, parentId: string): void {
-    sub.record[sub.firstId].parent = parentId;
-    sub.record[sub.firstId].topLevel = false;
-    for (const [id, block] of Object.entries(sub.record)) this.addOrphan(id, block);
-  }
-
-  forever(body: (s: Script) => void): string {
-    const sub = this.buildSubstack(body);
-    if (!sub) return this.push(Block.create('control_forever'));
-    const b = Block.create('control_forever').withInput('SUBSTACK', InputVal.block(sub.firstId));
-    const id = this.push(b);
-    this.attachSubstack(sub, id);
-    return id;
-  }
-
-  repeat(times: Val, body: (s: Script) => void): string {
-    const sub = this.buildSubstack(body);
-    const b = Block.create('control_repeat').withInput('TIMES', InputVal.coerce(times));
-    if (!sub) return this.push(b);
-    b.withInput('SUBSTACK', InputVal.block(sub.firstId));
-    const id = this.push(b);
-    this.attachSubstack(sub, id);
-    return id;
-  }
-
-  if(condition: InputVal, body: (s: Script) => void): string {
-    const sub = this.buildSubstack(body);
-    const b = Block.create('control_if').withInput('CONDITION', condition);
-    if (!sub) return this.push(b);
-    b.withInput('SUBSTACK', InputVal.block(sub.firstId));
-    const id = this.push(b);
-    this.attachSubstack(sub, id);
-    return id;
-  }
-
-  ifElse(condition: InputVal, thenBody: (s: Script) => void, elseBody: (s: Script) => void): string {
-    const thenSub = this.buildSubstack(thenBody);
-    const elseSub = this.buildSubstack(elseBody);
-    const b = Block.create('control_if_else').withInput('CONDITION', condition);
-    if (thenSub) b.withInput('SUBSTACK', InputVal.block(thenSub.firstId));
-    if (elseSub) b.withInput('SUBSTACK2', InputVal.block(elseSub.firstId));
-    const id = this.push(b);
-    if (thenSub) this.attachSubstack(thenSub, id);
-    if (elseSub) this.attachSubstack(elseSub, id);
-    return id;
-  }
-
-  repeatUntil(condition: InputVal, body: (s: Script) => void): string {
-    const sub = this.buildSubstack(body);
-    const b = Block.create('control_repeat_until').withInput('CONDITION', condition);
-    if (!sub) return this.push(b);
-    b.withInput('SUBSTACK', InputVal.block(sub.firstId));
-    const id = this.push(b);
-    this.attachSubstack(sub, id);
-    return id;
   }
 
   insert(id: string, block: Block): string {

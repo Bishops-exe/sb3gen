@@ -11,6 +11,7 @@ import {
   Project, Costume,
   WhenFlagClicked, SetVariableTo, WaitUntil, SayForSecs,
   Random, Gt, KeyPressed,
+  IfElse,
 } from '../src';
 
 const project = new Project();
@@ -23,14 +24,14 @@ const sprite = project.addSprite('Judge');
 sprite.costumes.push(Costume.rect('costume1', '#FFAB19', 80, 80, 12));
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(SetVariableTo(s.embed(Random(1, 10)), n));
 
-  s.ifElse(
+  s.push(IfElse(
     s.embed(Gt(s.embed(n), 5)),
     then => { then.push(SayForSecs('big!', 1)); },
     els  => { els.push(SayForSecs('small!', 1)); }
-  );
+  ));
 
   s.push(WaitUntil(s.embed(KeyPressed('space'))));
 });

@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Expose, Transform, Type, instanceToPlain, plainToInstance } from 'class-transformer';
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Block, BlocksMap, Script, serializeBlocksRecord, deserializeBlocksRecord } from './block/Block';

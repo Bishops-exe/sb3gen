@@ -1,68 +1,70 @@
-import 'reflect-metadata';
-import { Expose } from 'class-transformer';
-import { IsNumber, IsString } from 'class-validator';
+import {Expose} from 'class-transformer';
+import {IsNumber, IsString} from 'class-validator';
 import SparkMD5 from 'spark-md5';
 
 export default class Costume {
   @Expose()
   @IsString()
-  assetId: string;
-
-  @Expose()
-  @IsString()
   name: string;
 
-  @Expose()
-  @IsString()
-  md5ext: string;
+  data: Uint8Array;
+
 
   @Expose()
-  @IsString()
-  dataFormat: string;
+  get assetId(): string {
+    return SparkMD5.ArrayBuffer.hash(this.data.buffer as ArrayBuffer);
+  }
 
   @Expose()
-  @IsNumber()
-  bitmapResolution: number;
+  get md5ext(): string {
+    return `${this.assetId}.${this.dataFormat}`
+  }
 
   @Expose()
-  @IsNumber()
-  rotationCenterX: number;
+  get dataFormat(): string {
+    return Costume.detectFormat(this.data);
+  }
 
   @Expose()
-  @IsNumber()
-  rotationCenterY: number;
+  get bitmapResolution(): number {
+    return this.dataFormat === 'svg' ? 1 : 2;
+  }
 
-  data?: Uint8Array;
-
-  constructor(name: string, data?: Uint8Array) {
+  constructor(name: string, data: Uint8Array | string) {
     this.name = name;
-    if (!data) return;
-    this.data = data;
-    this.assetId = SparkMD5.ArrayBuffer.hash(data.buffer as ArrayBuffer);
-    this.dataFormat = Costume.detectFormat(data);
-    this.bitmapResolution = this.dataFormat === 'svg' ? 1 : 2;
-    this.md5ext = `${this.assetId}.${this.dataFormat}`;
+    this.data = (typeof data === "string" ? new TextEncoder().encode(data) : data)
   }
 
   static blank(name: string, width = 480, height = 360): Costume {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="white"/></svg>`;
-    return new Costume(name, new TextEncoder().encode(svg));
+    return new Costume(name, `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
+        <rect width="${width}" height="${height}" fill="white"/>
+      </svg>
+    `);
   }
 
   static colored(name: string, color: string, width = 480, height = 360): Costume {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="${color}"/></svg>`;
-    return new Costume(name, new TextEncoder().encode(svg));
+    return new Costume(name, `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
+        <rect width="${width}" height="${height}" fill="${color}"/>
+      </svg>
+    `);
   }
 
-  static circle(name: string, color: string, size = 80): Costume {
-    const r = size / 2;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><circle cx="${r}" cy="${r}" r="${r - 2}" fill="${color}"/></svg>`;
-    return new Costume(name, new TextEncoder().encode(svg));
+  static circle(name: string, color: string, radius = 40): Costume {
+    return new Costume(name, `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${radius} ${radius}">
+        <circle cx="${radius}" cy="${radius}" r="${radius - 2}" fill="${color}"/>
+       </svg>
+    `);
   }
 
   static rect(name: string, color: string, width = 80, height = 80, rx = 0): Costume {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}"${rx ? ` rx="${rx}"` : ''} fill="${color}"/></svg>`;
-    return new Costume(name, new TextEncoder().encode(svg));
+    return new Costume(name, `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
+        <rect width="${width}" height="${height}"${rx ? ` rx="${rx}"` : ''} fill="${color}"/>
+       </svg>
+    `);
   }
 
   private static detectFormat(data: Uint8Array): string {

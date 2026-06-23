@@ -11,7 +11,7 @@ const sprite = project.addSprite('Cat');
 sprite.costumes.push(Costume.circle('costume1', '#4C97FF', 100));
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(SayForSecs('Hello, World!', 2));
 });
 

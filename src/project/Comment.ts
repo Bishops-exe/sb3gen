@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
@@ -26,9 +25,9 @@ export default class Comment {
   @IsNumber()
   height: number = 200;
 
-  @Expose()
+  @Expose({name: "minimized"})
   @IsBoolean()
-  minimized: boolean = false;
+  private isMinimized: boolean = false;
 
   @Expose()
   @IsString()
@@ -38,25 +37,25 @@ export default class Comment {
     this.text = text;
   }
 
-  withBlock(id: string): this {
+  setBlock(id: string): this {
     this.blockId = id;
     return this;
   }
 
-  withXY(x: number, y: number): this {
+  setXY(x: number, y: number): this {
     this.x = x;
     this.y = y;
     return this;
   }
 
-  withSize(width: number, height: number): this {
+  setSize(width: number, height: number): this {
     this.width = width;
     this.height = height;
     return this;
   }
 
-  withMinimized(minimized: boolean): this {
-    this.minimized = minimized;
+  setMinimized(minimized: boolean): this {
+    this.isMinimized = minimized;
     return this;
   }
 }

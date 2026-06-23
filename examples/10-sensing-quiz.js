@@ -9,6 +9,7 @@ import {
   Project, Costume,
   WhenFlagClicked, AskAndWait, SayForSecs,
   SensingAnswer, Eq,
+  If,
 } from '../src';
 
 const project = new Project();
@@ -19,13 +20,13 @@ const sprite = project.addSprite('Quiz');
 sprite.costumes.push(Costume.circle('costume1', '#43A047', 80));
 
 sprite.addScript(s => {
-  s.push(WhenFlagClicked);
+  s.push(WhenFlagClicked());
   s.push(AskAndWait('What is 6 \xd7 7?'));
 
-  s.if(
+  s.push(If(
     s.embed(Eq(s.embed(SensingAnswer()), '42')),
     then => { then.push(SayForSecs('Correct!', 2)); }
-  );
+  ));
 
   s.push(SayForSecs('The answer is 42.', 2));
 });

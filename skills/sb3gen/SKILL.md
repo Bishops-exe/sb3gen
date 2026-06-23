@@ -184,6 +184,39 @@ InputVal.angle(90)
 `ItemNumOfList(item, list)`, `LengthOfList(list)`,
 `ListContainsItem(item, list)`, `ShowList(list)`, `HideList(list)`
 
+## Custom blocks (procedures)
+
+```typescript
+import { procedure, DefineBlock, CallBlock, ArgumentReporterStringNumber, ArgumentReporterBoolean } from 'sb3gen';
+
+// 1. Create a spec — proccode uses %s (string/number) and %b (boolean) markers
+const greet = procedure('greet %s loudly: %b', [
+  { name: 'name',  type: 'string_number' },
+  { name: 'shout', type: 'boolean' },
+]);
+
+// 2. Definition script — DefineBlock is the hat, use ArgumentReporter* in the body
+sprite.addScript(s => {
+  s.push(DefineBlock(greet));
+  s.push(If(
+    s.embed(ArgumentReporterBoolean('shout')),
+    inner => { inner.push(Say(inner.embed(ArgumentReporterStringNumber('name')))); },
+  ));
+});
+
+// 3. Call site — args in same order as params
+sprite.addScript(s => {
+  s.push(WhenFlagClicked());
+  s.push(CallBlock(greet, [InputVal.str('World'), InputVal.num(1)]));
+});
+```
+
+- `procedure(proccode, params, warp?)` — create a `ProcedureSpec`; param IDs are generated once and shared between define and call
+- `DefineBlock(spec)` — returns a hat block (push onto a script, body follows)
+- `CallBlock(spec, args?)` — returns a call block; `args` are `InputVal[]` in param order
+- `ArgumentReporterStringNumber(name)` / `ArgumentReporterBoolean(name)` — use inside the body with `s.embed()`
+- Pass `warp: true` as third arg to `procedure()` for "run without screen refresh"
+
 ## Extensions
 
 Extension namespaces are named exports from `'sb3gen'`:
@@ -296,3 +329,5 @@ sprite.addScript(s => {
 - `GoTo`, `GlideTo`, `SwitchCostumeTo`, `SwitchBackdropTo`, `PointTowards`, `KeyPressed`, `CreateCloneOf` are overloaded: pass a `string` for a named menu option (auto-wires shadow block), pass an `InputVal` for a dynamic value.
 - Data block param order: **value/item first, variable/list ref last** — `SetVariableTo(value, variable)`, `AddToList(item, list)`, etc.
 - Control flow builders (`Forever`, `Repeat`, `If`, `IfElse`, `RepeatUntil`) are standalone imported functions — wrap them in `s.push(...)`.
+- `procedure()` generates param IDs at call time — call it once and reuse the same spec for both `DefineBlock` and `CallBlock`; calling it twice produces mismatched IDs.
+- Inside a control block callback (`inner =>`), use `inner.embed()` not `s.embed()` — embed is scoped to whichever script resolves the pending block.

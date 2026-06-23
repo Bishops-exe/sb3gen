@@ -1,6 +1,7 @@
-import { Block, CompoundBlock } from './Block';
+import { Block, Input, CompoundBlock, SubstackBlock } from './Block';
 import { InputVal, Val, NumVal, VarParam, ListParam, BroadcastParam, varName, listName, broadcastName } from './InputVal';
 import { ck, ckColor } from './validate';
+import { getUniqueId } from '../../Utils';
 
 const c = InputVal.coerce;
 
@@ -624,4 +625,72 @@ export function ArgumentReporterStringNumber(value: string): Block {
 export function ArgumentReporterBoolean(value: string): Block {
   ck(value, 'value');
   return Block.create('argument_reporter_boolean').addField('VALUE', value);
+}
+
+export interface ProcParam {
+  name: string;
+  type: 'string_number' | 'boolean';
+}
+
+export interface ProcedureSpec {
+  readonly proccode: string;
+  readonly params: ReadonlyArray<{ id: string; name: string; type: 'string_number' | 'boolean' }>;
+  readonly warp: boolean;
+}
+
+export function procedure(proccode: string, params: ProcParam[] = [], warp = false): ProcedureSpec {
+  return {
+    proccode,
+    params: params.map(p => ({ ...p, id: getUniqueId() })),
+    warp,
+  };
+}
+
+export function DefineBlock(spec: ProcedureSpec): SubstackBlock {
+  const protoId = getUniqueId();
+  const proto = Block.shadow('procedures_prototype');
+  const record: Record<string, Block> = { [protoId]: proto };
+
+  for (const param of spec.params) {
+    const reporterId = getUniqueId();
+    const reporter = param.type === 'boolean'
+      ? Block.shadow('argument_reporter_boolean').addField('VALUE', param.name)
+      : Block.shadow('argument_reporter_string_number').addField('VALUE', param.name);
+    reporter.parent = protoId;
+    proto.inputs[param.id] = Input.value(InputVal.block(reporterId));
+    record[reporterId] = reporter;
+  }
+
+  proto.setMutation({
+    tagName: 'mutation',
+    children: [],
+    proccode: spec.proccode,
+    argumentids: JSON.stringify(spec.params.map(p => p.id)),
+    argumentnames: JSON.stringify(spec.params.map(p => p.name)),
+    argumentdefaults: JSON.stringify(spec.params.map(p => p.type === 'boolean' ? 'false' : '')),
+    warp: spec.warp ? 'true' : 'false',
+  });
+
+  const main = Block.create('procedures_definition')
+    .addInput('custom_block', InputVal.block(protoId));
+
+  return { main, substacks: [{ firstId: protoId, record }] };
+}
+
+export function CallBlock(spec: ProcedureSpec, args: InputVal[] = []): Block {
+  const block = Block.create('procedures_call');
+
+  spec.params.forEach((param, i) => {
+    const val = args[i] ?? InputVal.str('');
+    const mode = param.type === 'boolean' ? 2 : 1;
+    block.inputs[param.id] = Input.value(val, mode);
+  });
+
+  return block.setMutation({
+    tagName: 'mutation',
+    children: [],
+    proccode: spec.proccode,
+    argumentids: JSON.stringify(spec.params.map(p => p.id)),
+    warp: spec.warp ? 'true' : 'false',
+  });
 }

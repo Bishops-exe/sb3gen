@@ -195,6 +195,11 @@ const greet = procedure('greet %s loudly: %b', [
   { name: 'shout', type: 'boolean' },
 ]);
 
+// Run without screen refresh — pass true as third arg
+const fast = procedure('fast move %s steps', [
+  { name: 'steps', type: 'string_number' },
+], true);
+
 // 2. Definition script — DefineBlock is the hat, use ArgumentReporter* in the body
 sprite.addScript(s => {
   s.push(DefineBlock(greet));
@@ -215,7 +220,7 @@ sprite.addScript(s => {
 - `DefineBlock(spec)` — returns a hat block (push onto a script, body follows)
 - `CallBlock(spec, args?)` — returns a call block; `args` are `InputVal[]` in param order
 - `ArgumentReporterStringNumber(name)` / `ArgumentReporterBoolean(name)` — use inside the body with `s.embed()`
-- Pass `warp: true` as third arg to `procedure()` for "run without screen refresh"
+- Third arg to `procedure()` is `warp` (`boolean`, default `false`) — `true` = run without screen refresh
 
 ## Extensions
 

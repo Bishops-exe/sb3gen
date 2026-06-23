@@ -125,6 +125,11 @@ const greet = procedure('greet %s loudly: %b', [
   { name: 'shout', type: 'boolean' },
 ]);
 
+// Run without screen refresh (warp mode)
+const fast = procedure('fast move %s steps', [
+  { name: 'steps', type: 'string_number' },
+], true);
+
 // Definition script
 sprite.addScript(s => {
   s.push(DefineBlock(greet));
@@ -141,7 +146,7 @@ sprite.addScript(s => {
 });
 ```
 
-Pass `warp: true` as the third argument to `procedure()` to run without screen refresh. Inside a control block callback (`inner =>`), use `inner.embed()` — not `s.embed()`.
+Inside a control block callback (`inner =>`), use `inner.embed()` — not `s.embed()`.
 
 ### Editing existing `.sb3` files
 

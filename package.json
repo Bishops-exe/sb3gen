@@ -1,6 +1,6 @@
 {
   "name": "sb3gen",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "",
   "type": "module",
   "main": "dist/index.js",
@@ -12,7 +12,9 @@
       "types": "./dist/types/index.d.ts"
     }
   },
-  "sideEffects": ["./dist/esm/index.js"],
+  "sideEffects": [
+    "./dist/esm/index.js"
+  ],
   "license": "GPL-3.0",
   "files": [
     "dist"
